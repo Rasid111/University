@@ -1,0 +1,39 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: mssql
+    expose:
+      - 1434
+    ports:
+      - 1434:1433
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=secret12345!
+    volumes:
+      - mssql_volume:/var/opt/mssql 
+    networks:
+      - university_network
+    restart: always
+
+  webapi:
+    image: webapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mvc
+    expose:
+      - 5001
+    ports:
+      - 5000:8080
+    networks:
+      - university_network
+    depends_on:
+      - mssql
+    restart: always
+
+networks:
+  university_network:
+    driver: bridge
+
+volumes:
+  mssql_volume:
