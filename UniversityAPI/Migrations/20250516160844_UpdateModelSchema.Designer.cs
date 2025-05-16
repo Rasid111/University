@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UniversityAPI.Database;
 
@@ -11,9 +12,11 @@ using UniversityAPI.Database;
 namespace UniversityAPI.Migrations
 {
     [DbContext(typeof(UniversityDbContext))]
-    partial class UniversityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250516160844_UpdateModelSchema")]
+    partial class UpdateModelSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -76,40 +79,6 @@ namespace UniversityAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Faculties");
-                });
-
-            modelBuilder.Entity("UniversityAPI.Models.Grade", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("StudentProfileId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SubjectId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("TeacherProfileId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Value")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StudentProfileId");
-
-                    b.ToTable("Grades");
                 });
 
             modelBuilder.Entity("UniversityAPI.Models.Group", b =>
@@ -313,15 +282,10 @@ namespace UniversityAPI.Migrations
                     b.Property<int>("Mistakes")
                         .HasColumnType("int");
 
-                    b.Property<int?>("StudentProfileId")
-                        .HasColumnType("int");
-
                     b.Property<int>("TestId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("StudentProfileId");
 
                     b.HasIndex("TestId");
 
@@ -414,13 +378,6 @@ namespace UniversityAPI.Migrations
                         .IsRequired();
 
                     b.Navigation("Question");
-                });
-
-            modelBuilder.Entity("UniversityAPI.Models.Grade", b =>
-                {
-                    b.HasOne("UniversityAPI.Models.StudentProfile", null)
-                        .WithMany("Grades")
-                        .HasForeignKey("StudentProfileId");
                 });
 
             modelBuilder.Entity("UniversityAPI.Models.Group", b =>
@@ -523,10 +480,6 @@ namespace UniversityAPI.Migrations
 
             modelBuilder.Entity("UniversityAPI.Models.TestResult", b =>
                 {
-                    b.HasOne("UniversityAPI.Models.StudentProfile", null)
-                        .WithMany("TestResults")
-                        .HasForeignKey("StudentProfileId");
-
                     b.HasOne("UniversityAPI.Models.Test", "Test")
                         .WithMany()
                         .HasForeignKey("TestId")
@@ -565,10 +518,6 @@ namespace UniversityAPI.Migrations
 
             modelBuilder.Entity("UniversityAPI.Models.StudentProfile", b =>
                 {
-                    b.Navigation("Grades");
-
-                    b.Navigation("TestResults");
-
                     b.Navigation("User")
                         .IsRequired();
                 });

@@ -1,133 +1,146 @@
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UniversityAPI.Database;
+using UniversityAPI.Dtos;
 using UniversityAPI.Models;
-using UniversityAPI.Services;
 
 namespace UniversityAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Teacher,Admin")]
+    [Authorize(Roles = "Admin,Teacher")]
     public class TeacherProfilesController : ControllerBase
     {
         private readonly UniversityDbContext _context;
-        private readonly BlobService _blobService;
 
-        public TeacherProfilesController(UniversityDbContext context, BlobService blobService)
+        public TeacherProfilesController(UniversityDbContext context)
         {
             _context = context;
-            _blobService = blobService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<IEnumerable<TeacherProfileDto>>> GetAll()
         {
             var teachers = await _context.TeacherProfiles
                 .Include(t => t.User)
-                .Include(t => t.Faculty)
                 .Include(t => t.Degree)
-                .Include(t => t.Groups)
+                .Include(t => t.Faculty)
                 .Include(t => t.Subjects)
-                .Include(t => t.TeacherGroupSubjects)
+                .Include(t => t.Groups)
                 .ToListAsync();
 
-            return Ok(teachers);
+            var dtoList = teachers.Select(t => new TeacherProfileDto
+            {
+                Id = t.Id,
+                UserName = t.User.UserName,
+                FullName = t.User.Name + " " + t.User.Surname,
+                DegreeId = t.DegreeId,
+                DegreeName = t.Degree.Name,
+                FacultyId = t.FacultyId,
+                FacultyName = t.Faculty.Name,
+                SubjectNames = t.Subjects.Select(s => s.Name).ToList(),
+                GroupNames = t.Groups.Select(g => g.Name).ToList()
+            }).ToList();
+
+            return Ok(dtoList);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        public async Task<ActionResult<TeacherProfileDto>> GetById(int id)
         {
             var teacher = await _context.TeacherProfiles
                 .Include(t => t.User)
-                .Include(t => t.Faculty)
                 .Include(t => t.Degree)
-                .Include(t => t.Groups)
+                .Include(t => t.Faculty)
                 .Include(t => t.Subjects)
-                .Include(t => t.TeacherGroupSubjects)
+                .Include(t => t.Groups)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (teacher == null)
-                return NotFound("Teacher not found.");
+            if (teacher == null) return NotFound();
 
-            return Ok(teacher);
+            return Ok(new TeacherProfileDto
+            {
+                Id = teacher.Id,
+                UserName = teacher.User.UserName,
+                FullName = teacher.User.Name + " " + teacher.User.Surname,
+                DegreeId = teacher.DegreeId,
+                DegreeName = teacher.Degree.Name,
+                FacultyId = teacher.FacultyId,
+                FacultyName = teacher.Faculty.Name,
+                SubjectNames = teacher.Subjects.Select(s => s.Name).ToList(),
+                GroupNames = teacher.Groups.Select(g => g.Name).ToList()
+            });
         }
-
-        // [HttpGet("profile")]
-        // public async Task<IActionResult> GetOwnProfile()
-        // {
-        //     var username = User.Identity?.Name;
-
-        //     var user = await _context.Users
-        //         .Include(u => u.TeacherProfile)
-        //         .ThenInclude(p => p.Faculty)
-        //         .Include(u => u.TeacherProfile.Degree)
-        //         .Include(u => u.TeacherProfile.Groups)
-        //         .Include(u => u.TeacherProfile.Subjects)
-        //         .Include(u => u.TeacherProfile.TeacherGroupSubjects)
-        //         .FirstOrDefaultAsync(u => u.UserName == username);
-
-        //     if (user == null || user.TeacherProfile == null)
-        //         return NotFound("Teacher profile not found.");
-
-        //     return Ok(user.TeacherProfile);
-        // }
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create(TeacherProfile profile)
+        public async Task<ActionResult<TeacherProfileDto>> Create(CreateTeacherProfileDto dto)
         {
+            var user = new User
+            {
+                UserName = dto.UserName,
+                Name = dto.FullName.Split(' ').FirstOrDefault() ?? "N/A",
+                Surname = dto.FullName.Split(' ').Skip(1).FirstOrDefault() ?? "N/A",
+                Email = $"{dto.UserName}@example.com",
+                EmailConfirmed = true
+            };
+
+            var profile = new TeacherProfile
+            {
+                User = user,
+                DegreeId = dto.DegreeId,
+                FacultyId = dto.FacultyId,
+                Degree = null!,
+                Faculty = null!
+            };
+
             _context.TeacherProfiles.Add(profile);
             await _context.SaveChangesAsync();
-            return Ok(profile);
+
+            return CreatedAtAction(nameof(GetById), new { id = profile.Id }, new TeacherProfileDto
+            {
+                Id = profile.Id,
+                UserName = user.UserName,
+                FullName = user.Name + " " + user.Surname,
+                DegreeId = profile.DegreeId,
+                DegreeName = "",
+                FacultyId = profile.FacultyId,
+                FacultyName = "",
+                SubjectNames = new(),
+                GroupNames = new()
+            });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, TeacherProfile profile)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Update(int id, UpdateTeacherProfileDto dto)
         {
-            if (id != profile.Id)
-                return BadRequest("ID mismatch");
+            if (id != dto.Id) return BadRequest("ID mismatch");
 
-            _context.Update(profile);
+            var profile = await _context.TeacherProfiles.FindAsync(id);
+            if (profile == null) return NotFound();
+
+            profile.DegreeId = dto.DegreeId;
+            profile.FacultyId = dto.FacultyId;
+
             await _context.SaveChangesAsync();
-            return Ok("Updated successfully");
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
-            var teacher = await _context.TeacherProfiles.FindAsync(id);
-            if (teacher == null)
-                return NotFound("Not found");
+            var profile = await _context.TeacherProfiles.FindAsync(id);
+            if (profile == null) return NotFound();
 
-            _context.TeacherProfiles.Remove(teacher);
+            _context.TeacherProfiles.Remove(profile);
             await _context.SaveChangesAsync();
-            return Ok("Deleted");
+
+            return NoContent();
         }
-
-        // [HttpPost("upload-profile-picture")]
-        // public async Task<IActionResult> UploadProfilePicture([FromForm] IFormFile profilePicture)
-        // {
-        //     var username = User.Identity?.Name;
-
-        //     var user = await _context.Users
-        //         .FirstOrDefaultAsync(u => u.UserName == username);
-
-        //     if (user == null || user.TeacherProfileId == null)
-        //         return NotFound("User or profile not found");
-
-        //     if (profilePicture == null || profilePicture.Length == 0)
-        //         return BadRequest("No file uploaded");
-
-        //     string fileName = $"{user.UserName}_{DateTime.UtcNow.Ticks}{Path.GetExtension(profilePicture.FileName)}";
-        //     string imageUrl = await _blobService.UploadFileAsync(profilePicture, fileName);
-
-        //     user.ProfilePictureUrl = imageUrl;
-        //     await _context.SaveChangesAsync();
-
-        //     return Ok(new { message = "Picture uploaded", imageUrl });
-        // }
     }
 }
