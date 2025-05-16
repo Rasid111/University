@@ -1,4 +1,3 @@
-// File: Controllers/UsersController.cs
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;

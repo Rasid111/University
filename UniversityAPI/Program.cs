@@ -77,6 +77,13 @@ namespace UniversityAPI
 
             var app = builder.Build();
 
+            var serviceScopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
+            using (var scope = serviceScopeFactory.CreateScope())
+            {
+                var r_ExamDbContext = scope.ServiceProvider.GetService<UniversityDbContext>();
+                r_ExamDbContext?.Database.Migrate();
+            }
+
             // Apply migrations (ensure database schema is up to date)
             using (var scope = app.Services.CreateScope())
             {

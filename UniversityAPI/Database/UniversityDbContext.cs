@@ -17,8 +17,9 @@ namespace UniversityAPI.Database
         public DbSet<Faculty> Faculties { get; set; }
         public DbSet<Degree> Degrees { get; set; }
         public DbSet<TestResult> TestResults { get; set; }
-
         public DbSet<Question> Questions { get; set; }
+        public DbSet<Grade> Grades { get; set; }
+        
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
