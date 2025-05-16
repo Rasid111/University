@@ -1,12 +1,16 @@
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UniversityAPI.Database;
+using UniversityAPI.Dtos;
 using UniversityAPI.Models;
 
 namespace UniversityAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Teacher,Admin")]
     public class GroupsController : ControllerBase
     {
         private readonly UniversityDbContext _context;
@@ -17,82 +21,119 @@ namespace UniversityAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Group>>> GetGroups()
+        public async Task<ActionResult<IEnumerable<GroupDto>>> GetAll()
         {
-            return await _context.Groups
+            var groups = await _context.Groups
                 .Include(g => g.Faculty)
                 .Include(g => g.Major)
                 .Include(g => g.Subjects)
-                .Include(g => g.TeacherProfiles)
-                .Include(g => g.Students)
+                .Include(g => g.TeacherProfiles).ThenInclude(tp => tp.User)
+                .Include(g => g.Students).ThenInclude(s => s.User)
                 .ToListAsync();
+
+            var dtoList = groups.Select(group => new GroupDto
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Year = group.Year,
+                FacultyId = group.FacultyId,
+                FacultyName = group.Faculty.Name,
+                MajorId = group.MajorId,
+                MajorName = group.Major.Name,
+                SubjectNames = group.Subjects.Select(s => s.Name).ToList(),
+                TeacherNames = group.TeacherProfiles.Select(t => t.User.Name).ToList(),
+                StudentNames = group.Students.Select(s => s.User.Name).ToList()
+            }).ToList();
+
+            return Ok(dtoList);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Group>> GetGroup(int id)
+        public async Task<ActionResult<GroupDto>> GetById(int id)
         {
             var group = await _context.Groups
                 .Include(g => g.Faculty)
                 .Include(g => g.Major)
                 .Include(g => g.Subjects)
-                .Include(g => g.TeacherProfiles)
-                .Include(g => g.Students)
+                .Include(g => g.TeacherProfiles).ThenInclude(tp => tp.User)
+                .Include(g => g.Students).ThenInclude(s => s.User)
                 .FirstOrDefaultAsync(g => g.Id == id);
 
-            if (group == null)
-                return NotFound();
+            if (group == null) return NotFound();
 
-            return group;
+            return Ok(new GroupDto
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Year = group.Year,
+                FacultyId = group.FacultyId,
+                FacultyName = group.Faculty.Name,
+                MajorId = group.MajorId,
+                MajorName = group.Major.Name,
+                SubjectNames = group.Subjects.Select(s => s.Name).ToList(),
+                TeacherNames = group.TeacherProfiles.Select(t => t.User.Name).ToList(),
+                StudentNames = group.Students.Select(s => s.User.Name).ToList()
+            });
         }
 
         [HttpPost]
-        public async Task<ActionResult<Group>> CreateGroup(Group group)
+        public async Task<ActionResult<GroupDto>> Create(CreateGroupDto dto)
         {
+            var group = new Group
+            {
+                Name = dto.Name,
+                Year = dto.Year,
+                FacultyId = dto.FacultyId,
+                MajorId = dto.MajorId,
+                Faculty = null!,
+                Major = null!
+            };
+
             _context.Groups.Add(group);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetGroup), new { id = group.Id }, group);
+            return CreatedAtAction(nameof(GetById), new { id = group.Id }, new GroupDto
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Year = group.Year,
+                FacultyId = group.FacultyId,
+                FacultyName = "", // optional lookup
+                MajorId = group.MajorId,
+                MajorName = "",
+                SubjectNames = new(),
+                TeacherNames = new(),
+                StudentNames = new()
+            });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateGroup(int id, Group group)
+        public async Task<IActionResult> Update(int id, UpdateGroupDto dto)
         {
-            if (id != group.Id)
-                return BadRequest();
+            if (id != dto.Id) return BadRequest("ID mismatch");
 
-            _context.Entry(group).State = EntityState.Modified;
+            var group = await _context.Groups.FindAsync(id);
+            if (group == null) return NotFound();
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!GroupExists(id))
-                    return NotFound();
-                else
-                    throw;
-            }
+            group.Name = dto.Name;
+            group.Year = dto.Year;
+            group.FacultyId = dto.FacultyId;
+            group.MajorId = dto.MajorId;
 
+            await _context.SaveChangesAsync();
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteGroup(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             var group = await _context.Groups.FindAsync(id);
-            if (group == null)
-                return NotFound();
+            if (group == null) return NotFound();
 
             _context.Groups.Remove(group);
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool GroupExists(int id)
-        {
-            return _context.Groups.Any(e => e.Id == id);
         }
     }
 }

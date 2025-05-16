@@ -1,12 +1,16 @@
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UniversityAPI.Database;
+using UniversityAPI.Dtos;
 using UniversityAPI.Models;
 
 namespace UniversityAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Teacher,Admin")]
     public class FacultiesController : ControllerBase
     {
         private readonly UniversityDbContext _context;
@@ -17,67 +21,74 @@ namespace UniversityAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Faculty>>> GetFaculties()
+        public async Task<ActionResult<IEnumerable<FacultyDto>>> GetAll()
         {
-            return await _context.Faculties.ToListAsync();
+            var faculties = await _context.Faculties.ToListAsync();
+
+            var dtoList = faculties.Select(f => new FacultyDto
+            {
+                Id = f.Id,
+                Name = f.Name
+            }).ToList();
+
+            return Ok(dtoList);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Faculty>> GetFaculty(int id)
+        public async Task<ActionResult<FacultyDto>> GetById(int id)
         {
             var faculty = await _context.Faculties.FindAsync(id);
-            if (faculty == null)
-                return NotFound();
-            return faculty;
+            if (faculty == null) return NotFound();
+
+            return Ok(new FacultyDto
+            {
+                Id = faculty.Id,
+                Name = faculty.Name
+            });
         }
 
         [HttpPost]
-        public async Task<ActionResult<Faculty>> CreateFaculty(Faculty faculty)
+        public async Task<ActionResult<FacultyDto>> Create(CreateFacultyDto dto)
         {
+            var faculty = new Faculty
+            {
+                Name = dto.Name
+            };
+
             _context.Faculties.Add(faculty);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetFaculty), new { id = faculty.Id }, faculty);
+
+            return CreatedAtAction(nameof(GetById), new { id = faculty.Id }, new FacultyDto
+            {
+                Id = faculty.Id,
+                Name = faculty.Name
+            });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateFaculty(int id, Faculty faculty)
+        public async Task<IActionResult> Update(int id, UpdateFacultyDto dto)
         {
-            if (id != faculty.Id)
-                return BadRequest();
+            if (id != dto.Id) return BadRequest("ID mismatch");
 
-            _context.Entry(faculty).State = EntityState.Modified;
+            var faculty = await _context.Faculties.FindAsync(id);
+            if (faculty == null) return NotFound();
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!FacultyExists(id))
-                    return NotFound();
-                else
-                    throw;
-            }
+            faculty.Name = dto.Name;
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFaculty(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             var faculty = await _context.Faculties.FindAsync(id);
-            if (faculty == null)
-                return NotFound();
+            if (faculty == null) return NotFound();
 
             _context.Faculties.Remove(faculty);
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool FacultyExists(int id)
-        {
-            return _context.Faculties.Any(e => e.Id == id);
         }
     }
 }

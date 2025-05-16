@@ -49,11 +49,10 @@
 //     }
 // }
 
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Protocols.Configuration;
+using Microsoft.Extensions.Configuration;
 using System;
 using UniversityAPI.Database;
 
@@ -66,7 +65,7 @@ namespace UniversityAPI
             var builder = WebApplication.CreateBuilder(args);
 
             // Get the Azure SQL connection string from appsettings.json or environment variables
-            string connectionString = builder.Configuration.GetConnectionString("AzureSqlConnection") ?? throw new InvalidConfigurationException();
+            string connectionString = builder.Configuration.GetConnectionString("AzureSqlConnection") ?? throw new InvalidOperationException("Connection string 'AzureSqlConnection' not found.");
 
             // Configure the services and context with Azure SQL Database connection
             builder.Services.AddDbContext<UniversityDbContext>(options =>
@@ -79,11 +78,10 @@ namespace UniversityAPI
             var app = builder.Build();
 
             // Apply migrations (ensure database schema is up to date)
-            var serviceScopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
-            using (var scope = serviceScopeFactory.CreateScope())
+            using (var scope = app.Services.CreateScope())
             {
-                var dbContext = scope.ServiceProvider.GetService<UniversityDbContext>();
-                dbContext?.Database.Migrate(); // Apply any pending migrations
+                var dbContext = scope.ServiceProvider.GetRequiredService<UniversityDbContext>();
+                dbContext.Database.Migrate(); // Apply any pending migrations
             }
 
             // Enable Swagger for API documentation

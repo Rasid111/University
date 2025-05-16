@@ -16,6 +16,10 @@ namespace UniversityAPI.Database
         public DbSet<Major> Majors { get; set; }
         public DbSet<Faculty> Faculties { get; set; }
         public DbSet<Degree> Degrees { get; set; }
+        public DbSet<TestResult> TestResults { get; set; }
+
+        public DbSet<Question> Questions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<TeacherGroupSubject>()

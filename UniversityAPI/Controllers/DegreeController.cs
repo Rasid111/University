@@ -1,12 +1,16 @@
+
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UniversityAPI.Database;
+using UniversityAPI.Dtos;
 using UniversityAPI.Models;
 
 namespace UniversityAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Teacher,Admin")]
     public class DegreesController : ControllerBase
     {
         private readonly UniversityDbContext _context;
@@ -17,67 +21,73 @@ namespace UniversityAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Degree>>> GetDegrees()
+        public async Task<ActionResult<IEnumerable<DegreeDto>>> GetAll()
         {
-            return await _context.Degrees.ToListAsync();
+            var degrees = await _context.Degrees.ToListAsync();
+            var dtoList = degrees.Select(d => new DegreeDto
+            {
+                Id = d.Id,
+                Name = d.Name
+            }).ToList();
+
+            return Ok(dtoList);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Degree>> GetDegree(int id)
+        public async Task<ActionResult<DegreeDto>> GetById(int id)
         {
             var degree = await _context.Degrees.FindAsync(id);
-            if (degree == null)
-                return NotFound();
-            return degree;
+            if (degree == null) return NotFound();
+
+            return Ok(new DegreeDto
+            {
+                Id = degree.Id,
+                Name = degree.Name
+            });
         }
 
         [HttpPost]
-        public async Task<ActionResult<Degree>> CreateDegree(Degree degree)
+        public async Task<ActionResult<DegreeDto>> Create(CreateDegreeDto dto)
         {
+            var degree = new Degree
+            {
+                Name = dto.Name
+            };
+
             _context.Degrees.Add(degree);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetDegree), new { id = degree.Id }, degree);
+
+            return CreatedAtAction(nameof(GetById), new { id = degree.Id }, new DegreeDto
+            {
+                Id = degree.Id,
+                Name = degree.Name
+            });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDegree(int id, Degree degree)
+        public async Task<IActionResult> Update(int id, UpdateDegreeDto dto)
         {
-            if (id != degree.Id)
-                return BadRequest();
+            if (id != dto.Id) return BadRequest("ID mismatch");
 
-            _context.Entry(degree).State = EntityState.Modified;
+            var degree = await _context.Degrees.FindAsync(id);
+            if (degree == null) return NotFound();
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DegreeExists(id))
-                    return NotFound();
-                else
-                    throw;
-            }
+            degree.Name = dto.Name;
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteDegree(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             var degree = await _context.Degrees.FindAsync(id);
-            if (degree == null)
-                return NotFound();
+            if (degree == null) return NotFound();
 
             _context.Degrees.Remove(degree);
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool DegreeExists(int id)
-        {
-            return _context.Degrees.Any(e => e.Id == id);
         }
     }
 }

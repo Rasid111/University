@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UniversityAPI.Database;
 using UniversityAPI.Dtos;
@@ -6,36 +8,87 @@ using UniversityAPI.Models;
 
 namespace UniversityAPI.Controllers
 {
-    [Route("api/[controller]/[action]")]
+    [Route("api/[controller]")]
     [ApiController]
-    public class SubjectsController(UniversityDbContext context) : ControllerBase
+    [Authorize(Roles = "Teacher,Admin")]
+    public class SubjectsController : ControllerBase
     {
-        private readonly UniversityDbContext _context = context;
+        private readonly UniversityDbContext _context;
+
+        public SubjectsController(UniversityDbContext context)
+        {
+            _context = context;
+        }
+
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<ActionResult<IEnumerable<SubjectDto>>> GetAll()
         {
-            return Ok(await _context.Subjects.ToListAsync());
+            var subjects = await _context.Subjects.ToListAsync();
+
+            var dtoList = subjects.Select(s => new SubjectDto
+            {
+                Id = s.Id,
+                Name = s.Name
+            }).ToList();
+
+            return Ok(dtoList);
         }
+
         [HttpGet("{id}")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<ActionResult<SubjectDto>> GetById(int id)
         {
-            var res = await _context.Subjects.FirstOrDefaultAsync(s => s.Id == id);
-            return res == null ? NotFound() : Ok(res);
+            var subject = await _context.Subjects.FindAsync(id);
+            if (subject == null) return NotFound();
+
+            return Ok(new SubjectDto
+            {
+                Id = subject.Id,
+                Name = subject.Name
+            });
         }
+
         [HttpPost]
-        public async Task<IActionResult> Create(SubjectCreateDto dto)
+        public async Task<ActionResult<SubjectDto>> Create(CreateSubjectDto dto)
         {
-            try
+            var subject = new Subject
             {
-                var subject = new Subject() { Name = dto.Name };
-                await _context.Subjects.AddAsync(subject);
-                var res = _context.SaveChanges();
-                return res > 0 ? Ok(subject.Id) : BadRequest();
-            }
-            catch (Exception)
+                Name = dto.Name
+            };
+
+            _context.Subjects.Add(subject);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = subject.Id }, new SubjectDto
             {
-                return StatusCode(500);
-            }
+                Id = subject.Id,
+                Name = subject.Name
+            });
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, UpdateSubjectDto dto)
+        {
+            if (id != dto.Id) return BadRequest("ID mismatch");
+
+            var subject = await _context.Subjects.FindAsync(id);
+            if (subject == null) return NotFound();
+
+            subject.Name = dto.Name;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var subject = await _context.Subjects.FindAsync(id);
+            if (subject == null) return NotFound();
+
+            _context.Subjects.Remove(subject);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
