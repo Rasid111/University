@@ -33,7 +33,13 @@ namespace UniversityAPI.Repositories
                 .Include(tgs => tgs.Schedule)
                 .FirstOrDefaultAsync(d => d.Id == id);
         }
-
+        public async Task<List<TeacherGroupSubject>> GetByGroup(int groupId)
+        {
+            return await _context.TeacherGroupSubjects
+                .Include(tgs => tgs.Schedule)
+                .Where(d => d.GroupId == groupId)
+                .ToListAsync();
+        }
         public void Update(TeacherGroupSubject entity)
         {
             _context.TeacherGroupSubjects.Update(entity);

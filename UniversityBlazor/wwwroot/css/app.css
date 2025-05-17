@@ -101,3 +101,14 @@ a, .btn-link {
 code {
     color: #c02d76;
 }
+
+.pfp-container {
+    width: 100px;
+    height: 100px;
+}
+
+    .pfp-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }

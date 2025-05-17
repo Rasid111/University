@@ -6,42 +6,37 @@
 @using System.Security.Claims
 @using UniversityBlazor.Services
 
-<h3>Мой профиль</h3>
-
 @if (isLoading)
 {
-    <p>Загрузка данных...</p>
+    <p>Loading...</p>
 }
 else if (profile == null)
 {
-    <p>Не удалось загрузить профиль</p>
+    <p>Failed</p>
 }
 else
 {
-    <EditForm Model="@profile" OnValidSubmit="@SaveProfile">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-
-        <div class="form-group">
-            <label>Name</label>
-            <InputText @bind-Value="profile.Name" class="form-control" />
-            <ValidationMessage For="@(() => profile.Name)" />
+    <div class="container-fluid">
+        <div class="row align-items-center justify-content-center text-center text-xl-start">
+            <div class="col-12 col-xl-4">
+                <div class="pfp-container d-inline-block">
+                    <img src=@(String.IsNullOrEmpty(profile.ProfilePictureUrl) ? "/default_pfp.svg" : profile.ProfilePictureUrl) alt="pfp" />
+                </div>
+                <h1 class="d-inline-block">@profile.Name @profile.Surname</h1>
+            </div>
+            <div class="col-12 col-xl-4">
+                <h3>Student</h3>
+                <span>at group: <a href="/group/@profile.StudentProfile.Group.Id">@profile.StudentProfile.Group.Name</a></span>
+                <br />
+                <span>@profile.StudentProfile.Group.Faculty.Name</span>
+            </div>
+            <div class="col-12 col-xl-4 mt-3">
+                <h3>@profile.TeacherProfile.Degree.Name</h3>
+                <span>at @profile.TeacherProfile.Faculty.Name</span>
+            </div>
         </div>
+    </div>
 
-        <div class="form-group">
-            <label>Surname</label>
-            <InputText @bind-Value="profile.Surname" class="form-control" />
-            <ValidationMessage For="@(() => profile.Surname)" />
-        </div>
-
-        <div class="form-group">
-            <label>Email:</label>
-            <InputText @bind-Value="profile.Email" class="form-control" readonly />
-        </div>
-
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-        <button type="button" class="btn btn-secondary ml-2" @onclick="@Cancel">Отмена</button>
-    </EditForm>
 
     @if (!string.IsNullOrEmpty(successMessage))
     {
@@ -54,7 +49,13 @@ else
     }
 }
 @code {
-    private UserProfile? profile = new();
+    private User? profile = new()
+        {
+            Name = "",
+            Surname = "",
+            Email = ""
+        };
+
     private bool isLoading = true;
     private string successMessage = string.Empty;
     private string errorMessage = string.Empty;
@@ -73,44 +74,11 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = "Ошибка при загрузке профиля: " + ex.Message;
+            errorMessage = "Error while loading profile: " + ex.Message;
         }
         finally
         {
             isLoading = false;
         }
-    }
-
-    private async Task SaveProfile()
-    {
-        // try
-        // {
-        //     await ProfileService.UpdateUserProfileAsync(profile);
-        //     successMessage = "Профиль успешно обновлен!";
-        //     errorMessage = string.Empty;
-        // }
-        // catch (Exception ex)
-        // {
-        //     errorMessage = "Ошибка при сохранении: " + ex.Message;
-        //     successMessage = string.Empty;
-        // }
-    }
-
-    private void Cancel()
-    {
-        navigationManager.NavigateTo("/");
-    }
-
-    public class UserProfile
-    {
-        [Required]
-        public string? Name { get; set; }
-        [Required]
-        public string? Surname { get; set; }
-        [Required]
-        public string? Email { get; set; }
-        [Required]
-        public string? ProfilePictureUrl { get; set; }
-
     }
 }
