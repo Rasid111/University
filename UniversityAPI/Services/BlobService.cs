@@ -9,8 +9,8 @@ namespace UniversityAPI.Services
 
         public BlobService(IConfiguration configuration)
         {
-            var connectionString = configuration["AzureBlobStorage:AzureBlobStorage"];
-            var containerName = configuration["AzureBlobStorage:ContainerName"];
+            var connectionString = configuration["ConnectionStrings:AzureBlobStorage"];
+            var containerName = configuration["ConnectionStrings:ContainerName"];
 
             var blobServiceClient = new BlobServiceClient(connectionString);
             _containerClient = blobServiceClient.GetBlobContainerClient(containerName);

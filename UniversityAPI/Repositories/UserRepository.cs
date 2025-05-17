@@ -44,7 +44,7 @@ namespace UniversityAPI.Repositories
 
             var fileName = $"pfp-{userId}{Path.GetExtension(file.FileName)}";
             await using var stream = file.OpenReadStream();
-            var imageUrl = await _blobService.UploadAsync(stream, fileName); // ✅ fixed
+            var imageUrl = await _blobService.UploadAsync(stream, fileName); 
 
             user.ProfilePictureUrl = imageUrl;
             await _context.SaveChangesAsync();
