@@ -24,6 +24,7 @@ namespace UniversityAPI.Extensions
             services.AddScoped<TestRepository>();
             services.AddScoped<UserRepository>();
             services.AddScoped<TeacherProfileRepository>();
+            services.AddScoped<GradeRepository>();
         }
         public static void AddUniversityDbContext(this IServiceCollection serviceCollection, IConfiguration configuration)
         {

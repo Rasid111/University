@@ -26,10 +26,33 @@ namespace UniversityAPI.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
+        [ProducesResponseType(403)]
         public async Task<IActionResult> Get(int id)
         {
-            return Ok(await _repository.Get(id));
+            var grade = await _repository.Get(id);
+            if (grade is null)
+                return NotFound();
+
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+                return Unauthorized("Invalid or missing user ID.");
+
+            var userRole = User.FindFirst("Role")?.Value;
+
+            var isAuthorized = userRole switch
+            {
+                "Student" => grade.StudentProfileId == userId,
+                "Teacher" => grade.TeacherProfileId == userId,
+                "Admin" => true,
+             _ => false
+            };
+
+            if (!isAuthorized)
+                return Forbid("You are not authorized to view this grade.");
+
+            return Ok(grade);
         }
+
 
         [HttpPost]
         [ProducesResponseType(203)]
