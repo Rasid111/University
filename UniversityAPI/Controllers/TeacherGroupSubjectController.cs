@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using UniversityAPI.Models;
 using UniversityAPI.Repositories;
 using UniversityApplication.Dtos;
@@ -28,6 +29,30 @@ namespace UniversityAPI.Controllers
             var subjects = await _teacherGroupSubjectRepository.Get();
             return Ok(subjects);
         }
+
+        [HttpGet("{id}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetScheduleByGroupId(int id)
+        {
+            var scheduleElements = await _teacherGroupSubjectRepository.GetScheduleByGroupId(id);
+            if (scheduleElements == null || !scheduleElements.Any())
+                return NotFound("No schedule found for this group.");
+
+            return Ok(scheduleElements);
+        }
+        [HttpGet("{id}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetScheduleByTeacherId(int id)
+        {
+            var scheduleElements = await _teacherGroupSubjectRepository.GetScheduleByTeacherId(id);
+            if (scheduleElements == null || !scheduleElements.Any())
+                return NotFound("No schedule found for this group.");
+
+            return Ok(scheduleElements);
+        }
+
         [HttpGet("{id}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
@@ -45,6 +70,7 @@ namespace UniversityAPI.Controllers
             var subject = await _subjectRepository.Get(dto.SubjectId);
             await _teacherGroupSubjectRepository.Create(new TeacherGroupSubject()
             {
+                Classroom = dto.Classroom,
                 Group = group ?? throw new ArgumentException(nameof(dto.GroupId)),
                 TeacherProfile = teacherProfile ?? throw new ArgumentException(nameof(dto.TeacherProfileId)),
                 Subject = subject ?? throw new ArgumentException(nameof(dto.SubjectId))

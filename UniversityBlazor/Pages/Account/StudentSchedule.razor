@@ -1,0 +1,418 @@
+﻿@page "/schedule"
+@inject AuthenticationStateProvider authenticationStateProvider
+@inject ProfileService profileService
+@using System.Security.Claims
+@using UniversityBlazor.Services
+<h1>
+    Your schedule for this week
+
+</h1>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (profile == null)
+{
+    <p>Failed</p>
+}
+else
+{
+    @if (isStudent)
+    {
+        <div class="container-fluid">
+            <div class="row border">
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Monday</h3>
+                    @foreach (var el in week.Monday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.TeacherName @el.TeacherSurname</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Tuesday</h3>
+                    @foreach (var el in week.Tuesday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.TeacherName @el.TeacherSurname</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Wednesday</h3>
+                    @foreach (var el in week.Wednesday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.TeacherName @el.TeacherSurname</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Thursday</h3>
+                    @foreach (var el in week.Thursday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.TeacherName @el.TeacherSurname</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Friday</h3>
+                    @foreach (var el in week.Friday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.TeacherName @el.TeacherSurname</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Saturday</h3>
+                    @foreach (var el in week.Saturday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.TeacherName @el.TeacherSurname</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    if (isTeacher)
+    {
+        <div class="container-fluid">
+            <div class="row border">
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Monday</h3>
+                    @foreach (var el in teacherWeek.Monday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.GroupName</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Tuesday</h3>
+                    @foreach (var el in teacherWeek.Tuesday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.GroupName</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Wednesday</h3>
+                    @foreach (var el in teacherWeek.Wednesday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.GroupName</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Thursday</h3>
+                    @foreach (var el in teacherWeek.Thursday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.GroupName</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Friday</h3>
+                    @foreach (var el in teacherWeek.Friday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.GroupName</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+                <div class="col-2 border mx-0 px-0">
+                    <h3 class="text-center">Saturday</h3>
+                    @foreach (var el in teacherWeek.Saturday)
+                    {
+                        <div class="border">
+                            <span>@el.SubjectName</span>
+                            <br />
+                            <span>@el.GroupName</span>
+                            <br />
+                            <span>Classroom №@el.Classroom</span>
+                            <br />
+                            <span>@el.StartTime - @el.EndTime</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success mt-3">@successMessage</div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">@errorMessage</div>
+    }
+}
+@code {
+    class ScheduleElementViewModel()
+    {
+        public ScheduleElementViewModel(ScheduleElement scheduleElement) : this()
+        {
+            DayOfWeek = scheduleElement.DayOfWeek;
+            StartTime = scheduleElement.StartTime;
+            EndTime = scheduleElement.EndTime;
+        }
+        public int Classroom { get; set; }
+        public DayOfWeek DayOfWeek { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
+        public required string SubjectName { get; set; }
+        public required string TeacherName { get; set; }
+        public required string TeacherSurname { get; set; }
+    }
+    class TeacherScheduleElementViewModel()
+    {
+        public TeacherScheduleElementViewModel(ScheduleElement scheduleElement) : this()
+        {
+            DayOfWeek = scheduleElement.DayOfWeek;
+            StartTime = scheduleElement.StartTime;
+            EndTime = scheduleElement.EndTime;
+        }
+        public int Classroom { get; set; }
+        public DayOfWeek DayOfWeek { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
+        public required string SubjectName { get; set; }
+        public required string GroupName { get; set; }
+    }
+    class Week
+    {
+        public List<ScheduleElementViewModel> Monday { get; set; } = [];
+        public List<ScheduleElementViewModel> Tuesday { get; set; } = [];
+        public List<ScheduleElementViewModel> Wednesday { get; set; } = [];
+        public List<ScheduleElementViewModel> Thursday { get; set; } = [];
+        public List<ScheduleElementViewModel> Friday { get; set; } = [];
+        public List<ScheduleElementViewModel> Saturday { get; set; } = [];
+    }
+    class TeacherWeek
+    {
+        public List<TeacherScheduleElementViewModel> Monday { get; set; } = [];
+        public List<TeacherScheduleElementViewModel> Tuesday { get; set; } = [];
+        public List<TeacherScheduleElementViewModel> Wednesday { get; set; } = [];
+        public List<TeacherScheduleElementViewModel> Thursday { get; set; } = [];
+        public List<TeacherScheduleElementViewModel> Friday { get; set; } = [];
+        public List<TeacherScheduleElementViewModel> Saturday { get; set; } = [];
+    }
+
+    private Week week = new();
+    private TeacherWeek teacherWeek = new();
+    private List<TeacherGroupSubject>? studentTgss = new();
+    private List<TeacherGroupSubject>? teacherTgss = new();
+    private User? profile = new()
+        {
+            Name = "",
+            Surname = "",
+            Email = ""
+        };
+
+    private bool isLoading = true;
+    private string successMessage = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private bool isStudent;
+    private bool isTeacher;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        try
+        {
+            var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            isStudent = authState.User.IsInRole("Student");
+            isTeacher = authState.User.IsInRole("Teacher");
+            if (userId != null)
+            {
+                profile = await profileService.GetProfileAsync(userId);
+                if (isStudent)
+                {
+                    studentTgss = await profileService.GetGroupScheduleAsync(profile.StudentProfile.GroupId);
+                }
+                if (studentTgss is not null)
+                {
+                    foreach (var tgs in studentTgss)
+                    {
+                        foreach (var scheduleElement in tgs.Schedule)
+                        {
+
+                            ScheduleElementViewModel scheduleElementViewModel = new ScheduleElementViewModel(scheduleElement)
+                                {
+                                    Classroom = tgs.Classroom,
+                                    SubjectName = tgs.Subject.Name,
+                                    TeacherName = tgs.TeacherProfile.User.Name,
+                                    TeacherSurname = tgs.TeacherProfile.User.Surname
+                                };
+                            switch (scheduleElement.DayOfWeek)
+                            {
+                                case DayOfWeek.Monday:
+                                    week.Monday.Add(scheduleElementViewModel);
+                                    break;
+                                case DayOfWeek.Tuesday:
+                                    week.Tuesday.Add(scheduleElementViewModel);
+                                    break;
+                                case DayOfWeek.Wednesday:
+                                    week.Wednesday.Add(scheduleElementViewModel);
+                                    break;
+                                case DayOfWeek.Thursday:
+                                    week.Thursday.Add(scheduleElementViewModel);
+                                    break;
+                                case DayOfWeek.Friday:
+                                    week.Friday.Add(scheduleElementViewModel);
+                                    break;
+                                case DayOfWeek.Saturday:
+                                    week.Saturday.Add(scheduleElementViewModel);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                    week.Monday = week.Monday.OrderBy(se => se.StartTime).ToList();
+                    week.Tuesday = week.Tuesday.OrderBy(se => se.StartTime).ToList();
+                    week.Wednesday = week.Wednesday.OrderBy(se => se.StartTime).ToList();
+                    week.Thursday = week.Thursday.OrderBy(se => se.StartTime).ToList();
+                    week.Friday = week.Friday.OrderBy(se => se.StartTime).ToList();
+                    week.Saturday = week.Saturday.OrderBy(se => se.StartTime).ToList();
+                }
+            }
+            if (isTeacher)
+            {
+                teacherTgss = await profileService.GetTeacherScheduleAsync(profile.TeacherProfileId.Value);
+            }
+            if (teacherTgss is not null)
+            {
+                foreach (var tgs in teacherTgss)
+                {
+                    foreach (var scheduleElement in tgs.Schedule)
+                    {
+
+                        TeacherScheduleElementViewModel scheduleElementViewModel = new TeacherScheduleElementViewModel(scheduleElement)
+                            {
+                                Classroom = tgs.Classroom,
+                                SubjectName = tgs.Subject.Name,
+                                GroupName = tgs.Group.Name
+                            };
+                        switch (scheduleElement.DayOfWeek)
+                        {
+                            case DayOfWeek.Monday:
+                                teacherWeek.Monday.Add(scheduleElementViewModel);
+                                break;
+                            case DayOfWeek.Tuesday:
+                                teacherWeek.Tuesday.Add(scheduleElementViewModel);
+                                break;
+                            case DayOfWeek.Wednesday:
+                                teacherWeek.Wednesday.Add(scheduleElementViewModel);
+                                break;
+                            case DayOfWeek.Thursday:
+                                teacherWeek.Thursday.Add(scheduleElementViewModel);
+                                break;
+                            case DayOfWeek.Friday:
+                                teacherWeek.Friday.Add(scheduleElementViewModel);
+                                break;
+                            case DayOfWeek.Saturday:
+                                teacherWeek.Saturday.Add(scheduleElementViewModel);
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    teacherWeek.Monday = teacherWeek.Monday.OrderBy(se => se.StartTime).ToList();
+                    teacherWeek.Tuesday = teacherWeek.Tuesday.OrderBy(se => se.StartTime).ToList();
+                    teacherWeek.Wednesday = teacherWeek.Wednesday.OrderBy(se => se.StartTime).ToList();
+                    teacherWeek.Thursday = teacherWeek.Thursday.OrderBy(se => se.StartTime).ToList();
+                    teacherWeek.Friday = teacherWeek.Friday.OrderBy(se => se.StartTime).ToList();
+                    teacherWeek.Saturday = teacherWeek.Saturday.OrderBy(se => se.StartTime).ToList();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error while loading profile: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
