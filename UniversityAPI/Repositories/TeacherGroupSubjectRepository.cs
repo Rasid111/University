@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using UniversityAPI.EntityFramework;
 using UniversityAPI.Models;
 using UniversityAPI.Repositories.Base;
@@ -15,6 +16,30 @@ namespace UniversityAPI.Repositories
             return entity.Id;
         }
 
+        public async Task<List<TeacherGroupSubject>> GetScheduleByGroupId(int id)
+        {
+            var res = await _context.TeacherGroupSubjects
+                .Include(tgs => tgs.Schedule)
+                .Include(tgs => tgs.TeacherProfile)
+                .ThenInclude(tgs => tgs.User)
+                .Include(tgs => tgs.Subject)
+                .Where(tgs => tgs.GroupId == id)
+                .ToListAsync();
+
+            return res;
+        }
+        public async Task<List<TeacherGroupSubject>> GetScheduleByTeacherId(int id)
+        {
+            var res = await _context.TeacherGroupSubjects
+                .Include(tgs => tgs.Schedule)
+                .Include(tgs => tgs.Group)
+                .Include(tgs => tgs.Subject)
+                .Where(tgs => tgs.TeacherProfileId == id)
+                .ToListAsync();
+
+            return res;
+        }
+        
         public async Task Delete(int id)
         {
             var entity = await Get(id) ?? throw new KeyNotFoundException();

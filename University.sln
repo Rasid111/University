@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversityAPI", "University
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversityBlazor", "UniversityBlazor\UniversityBlazor.csproj", "{8AB966D1-BEED-46DE-B75D-A33A7DA1B752}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UniversityApplication", "UniversityApplication\UniversityApplication.csproj", "{554517E8-3907-4781-B22A-CAC146DC6C9F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UniversityApplication", "UniversityApplication\UniversityApplication.csproj", "{554517E8-3907-4781-B22A-CAC146DC6C9F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
