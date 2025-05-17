@@ -29,7 +29,9 @@ namespace UniversityAPI.Repositories
 
         public async Task<TeacherGroupSubject?> Get(int id)
         {
-            return await _context.TeacherGroupSubjects.FirstOrDefaultAsync(d => d.Id == id);
+            return await _context.TeacherGroupSubjects
+                .Include(tgs => tgs.Schedule)
+                .FirstOrDefaultAsync(d => d.Id == id);
         }
 
         public void Update(TeacherGroupSubject entity)

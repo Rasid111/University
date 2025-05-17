@@ -46,6 +46,9 @@ namespace UniversityAPI.EntityFramework
                 .HasKey(tgs => new { tgs.TeacherProfileId, tgs.GroupId, tgs.SubjectId });
 
             modelBuilder.Entity<TeacherGroupSubject>()
+                .HasKey(tgs => tgs.Id);
+
+            modelBuilder.Entity<TeacherGroupSubject>()
                 .HasOne(tgs => tgs.TeacherProfile)
                 .WithMany(tp => tp.TeacherGroupSubjects)
                 .HasForeignKey(tgs => tgs.TeacherProfileId)

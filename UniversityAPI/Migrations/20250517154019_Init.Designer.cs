@@ -12,7 +12,7 @@ using UniversityAPI.EntityFramework;
 namespace UniversityAPI.Migrations
 {
     [DbContext(typeof(UniversityDbContext))]
-    [Migration("20250517150317_Init")]
+    [Migration("20250517154019_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -352,21 +352,12 @@ namespace UniversityAPI.Migrations
                     b.Property<TimeOnly>("StartTime")
                         .HasColumnType("time");
 
-                    b.Property<int>("TeacherGroupSubjectGroupId")
-                        .HasColumnType("int");
-
                     b.Property<int>("TeacherGroupSubjectId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TeacherGroupSubjectSubjectId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TeacherGroupSubjectTeacherProfileId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TeacherGroupSubjectTeacherProfileId", "TeacherGroupSubjectGroupId", "TeacherGroupSubjectSubjectId");
+                    b.HasIndex("TeacherGroupSubjectId");
 
                     b.ToTable("ScheduleElements");
                 });
@@ -415,7 +406,13 @@ namespace UniversityAPI.Migrations
 
             modelBuilder.Entity("UniversityAPI.Models.TeacherGroupSubject", b =>
                 {
-                    b.Property<int>("TeacherProfileId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Classroom")
                         .HasColumnType("int");
 
                     b.Property<int>("GroupId")
@@ -424,17 +421,16 @@ namespace UniversityAPI.Migrations
                     b.Property<int>("SubjectId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Classroom")
+                    b.Property<int>("TeacherProfileId")
                         .HasColumnType("int");
 
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.HasKey("TeacherProfileId", "GroupId", "SubjectId");
+                    b.HasKey("Id");
 
                     b.HasIndex("GroupId");
 
                     b.HasIndex("SubjectId");
+
+                    b.HasIndex("TeacherProfileId");
 
                     b.ToTable("TeacherGroupSubjects");
                 });
@@ -730,7 +726,7 @@ namespace UniversityAPI.Migrations
                 {
                     b.HasOne("UniversityAPI.Models.TeacherGroupSubject", "TeacherGroupSubject")
                         .WithMany("Schedule")
-                        .HasForeignKey("TeacherGroupSubjectTeacherProfileId", "TeacherGroupSubjectGroupId", "TeacherGroupSubjectSubjectId")
+                        .HasForeignKey("TeacherGroupSubjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

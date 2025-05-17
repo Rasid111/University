@@ -336,15 +336,16 @@ namespace UniversityAPI.Migrations
                 name: "TeacherGroupSubjects",
                 columns: table => new
                 {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Classroom = table.Column<int>(type: "int", nullable: false),
                     TeacherProfileId = table.Column<int>(type: "int", nullable: false),
                     GroupId = table.Column<int>(type: "int", nullable: false),
-                    SubjectId = table.Column<int>(type: "int", nullable: false),
-                    Id = table.Column<int>(type: "int", nullable: false),
-                    Classroom = table.Column<int>(type: "int", nullable: false)
+                    SubjectId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TeacherGroupSubjects", x => new { x.TeacherProfileId, x.GroupId, x.SubjectId });
+                    table.PrimaryKey("PK_TeacherGroupSubjects", x => x.Id);
                     table.ForeignKey(
                         name: "FK_TeacherGroupSubjects_Groups_GroupId",
                         column: x => x.GroupId,
@@ -440,19 +441,16 @@ namespace UniversityAPI.Migrations
                     DayOfWeek = table.Column<int>(type: "int", nullable: false),
                     StartTime = table.Column<TimeOnly>(type: "time", nullable: false),
                     EndTime = table.Column<TimeOnly>(type: "time", nullable: false),
-                    TeacherGroupSubjectId = table.Column<int>(type: "int", nullable: false),
-                    TeacherGroupSubjectTeacherProfileId = table.Column<int>(type: "int", nullable: false),
-                    TeacherGroupSubjectGroupId = table.Column<int>(type: "int", nullable: false),
-                    TeacherGroupSubjectSubjectId = table.Column<int>(type: "int", nullable: false)
+                    TeacherGroupSubjectId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ScheduleElements", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ScheduleElements_TeacherGroupSubjects_TeacherGroupSubjectTeacherProfileId_TeacherGroupSubjectGroupId_TeacherGroupSubjectSubj~",
-                        columns: x => new { x.TeacherGroupSubjectTeacherProfileId, x.TeacherGroupSubjectGroupId, x.TeacherGroupSubjectSubjectId },
+                        name: "FK_ScheduleElements_TeacherGroupSubjects_TeacherGroupSubjectId",
+                        column: x => x.TeacherGroupSubjectId,
                         principalTable: "TeacherGroupSubjects",
-                        principalColumns: new[] { "TeacherProfileId", "GroupId", "SubjectId" },
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -568,9 +566,9 @@ namespace UniversityAPI.Migrations
                 column: "TestId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_ScheduleElements_TeacherGroupSubjectTeacherProfileId_TeacherGroupSubjectGroupId_TeacherGroupSubjectSubjectId",
+                name: "IX_ScheduleElements_TeacherGroupSubjectId",
                 table: "ScheduleElements",
-                columns: new[] { "TeacherGroupSubjectTeacherProfileId", "TeacherGroupSubjectGroupId", "TeacherGroupSubjectSubjectId" });
+                column: "TeacherGroupSubjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_StudentProfiles_GroupId",
@@ -592,6 +590,11 @@ namespace UniversityAPI.Migrations
                 name: "IX_TeacherGroupSubjects_SubjectId",
                 table: "TeacherGroupSubjects",
                 column: "SubjectId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TeacherGroupSubjects_TeacherProfileId",
+                table: "TeacherGroupSubjects",
+                column: "TeacherProfileId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_TeachersProfiles_DegreeId",
