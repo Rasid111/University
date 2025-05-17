@@ -379,12 +379,16 @@ namespace UniversityAPI.Migrations
                     b.Property<int>("GroupId")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("GroupId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("StudentProfiles");
                 });
@@ -446,14 +450,18 @@ namespace UniversityAPI.Migrations
                     b.Property<int>("FacultyId")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("DegreeId");
 
                     b.HasIndex("FacultyId");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
 
                     b.ToTable("TeachersProfiles");
                 });
@@ -613,14 +621,6 @@ namespace UniversityAPI.Migrations
                         .HasDatabaseName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
-                    b.HasIndex("StudentProfileId")
-                        .IsUnique()
-                        .HasFilter("[StudentProfileId] IS NOT NULL");
-
-                    b.HasIndex("TeacherProfileId")
-                        .IsUnique()
-                        .HasFilter("[TeacherProfileId] IS NOT NULL");
-
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
@@ -742,7 +742,15 @@ namespace UniversityAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("UniversityAPI.Models.User", "User")
+                        .WithOne("StudentProfile")
+                        .HasForeignKey("UniversityAPI.Models.StudentProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Group");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("UniversityAPI.Models.TeacherGroupSubject", b =>
@@ -786,9 +794,17 @@ namespace UniversityAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("UniversityAPI.Models.User", "User")
+                        .WithOne("TeacherProfile")
+                        .HasForeignKey("UniversityAPI.Models.TeacherProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Degree");
 
                     b.Navigation("Faculty");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("UniversityAPI.Models.Test", b =>
@@ -832,21 +848,6 @@ namespace UniversityAPI.Migrations
                     b.Navigation("Test");
                 });
 
-            modelBuilder.Entity("UniversityAPI.Models.User", b =>
-                {
-                    b.HasOne("UniversityAPI.Models.StudentProfile", "StudentProfile")
-                        .WithOne("User")
-                        .HasForeignKey("UniversityAPI.Models.User", "StudentProfileId");
-
-                    b.HasOne("UniversityAPI.Models.TeacherProfile", "TeacherProfile")
-                        .WithOne("User")
-                        .HasForeignKey("UniversityAPI.Models.User", "TeacherProfileId");
-
-                    b.Navigation("StudentProfile");
-
-                    b.Navigation("TeacherProfile");
-                });
-
             modelBuilder.Entity("UniversityAPI.Models.Group", b =>
                 {
                     b.Navigation("Students");
@@ -864,9 +865,6 @@ namespace UniversityAPI.Migrations
                     b.Navigation("Grades");
 
                     b.Navigation("TestResults");
-
-                    b.Navigation("User")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("UniversityAPI.Models.Subject", b =>
@@ -884,9 +882,6 @@ namespace UniversityAPI.Migrations
             modelBuilder.Entity("UniversityAPI.Models.TeacherProfile", b =>
                 {
                     b.Navigation("TeacherGroupSubjects");
-
-                    b.Navigation("User")
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("UniversityAPI.Models.Test", b =>
@@ -897,6 +892,13 @@ namespace UniversityAPI.Migrations
             modelBuilder.Entity("UniversityAPI.Models.TestResult", b =>
                 {
                     b.Navigation("Answers");
+                });
+
+            modelBuilder.Entity("UniversityAPI.Models.User", b =>
+                {
+                    b.Navigation("StudentProfile");
+
+                    b.Navigation("TeacherProfile");
                 });
 #pragma warning restore 612, 618
         }

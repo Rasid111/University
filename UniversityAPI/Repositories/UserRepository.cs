@@ -18,11 +18,14 @@ namespace UniversityAPI.Repositories
                 if (user.StudentProfileId is not null)
                 {
                     user.StudentProfile = _context.StudentProfiles
+                        .Include(sp => sp.User)
                         .FirstOrDefault(sp => sp.Id == user.StudentProfileId);
                 }
-                if (user.StudentProfileId is not null)
+                if (user.TeacherProfileId is not null)
                 {
-                    user.StudentProfile = _context.StudentProfiles.FirstOrDefault(sp => sp.Id == user.StudentProfileId);
+                    user.TeacherProfile = _context.TeachersProfiles
+                        .Include(sp => sp.User)
+                        .FirstOrDefault(sp => sp.Id == user.TeacherProfileId);
                 }
             }
             return user;

@@ -32,6 +32,16 @@ namespace UniversityAPI.EntityFramework
             modelBuilder.Entity<RefreshToken>()
                 .HasKey(rt => rt.Token);
 
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.StudentProfile)
+                .WithOne(s => s.User)
+                .HasForeignKey<StudentProfile>(s => s.UserId);
+
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.TeacherProfile)
+                .WithOne(t => t.User)
+                .HasForeignKey<TeacherProfile>(s => s.UserId);
+
             modelBuilder.Entity<TeacherGroupSubject>()
                 .HasKey(tgs => new { tgs.TeacherProfileId, tgs.GroupId, tgs.SubjectId });
 

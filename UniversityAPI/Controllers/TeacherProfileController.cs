@@ -11,44 +11,51 @@ namespace UniversityAPI.Controllers
     [ApiController]
     [ProducesResponseType(401)]
     [ProducesResponseType(500)]
-    public class StudentProfileController(StudentProfileRepository studentProfileRepository, UserManager<User> userManager, GroupRepository groupRepository) : ControllerBase
+    public class TeacherProfileController(
+        TeacherProfileRepository teachertProfileRepository,
+        UserManager<User> userManager,
+        FacultyRepository facultyRepository,
+        DegreeRepository degreeRepository) : ControllerBase
     {
-        readonly StudentProfileRepository _studentProfileRepository = studentProfileRepository;
+        readonly TeacherProfileRepository _teacherProfileRepository = teachertProfileRepository;
         readonly UserManager<User> _userManager = userManager;
-        readonly GroupRepository _groupRepository = groupRepository;
+        readonly FacultyRepository _facultyRepository = facultyRepository;
+        readonly DegreeRepository _degreeRepository = degreeRepository;
 
         [HttpGet]
         [ProducesResponseType(200)]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _studentProfileRepository.Get());
+            return Ok(await _teacherProfileRepository.Get());
         }
         [HttpGet("{id}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Get(int id)
         {
-            var subject = await _studentProfileRepository.Get(id);
+            var subject = await _teacherProfileRepository.Get(id);
             return Ok(subject);
         }
         [HttpPost]
         [ProducesResponseType(203)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> Create(StudentProfileCreateDto dto)
+        public async Task<IActionResult> Create(TeacherProfileCreateDto dto)
         {
             var user = await _userManager.FindByIdAsync(dto.UserId.ToString());
-            var group = await _groupRepository.Get(dto.GroupId);
+            var faculty = await _facultyRepository.Get(dto.DegreeId);
+            var degree= await _degreeRepository.Get(dto.FacultyId);
 
-            var sp = new StudentProfile()
+            var tp = new TeacherProfile()
             {
                 UserId = dto.UserId,
                 User = user ?? throw new ArgumentException(nameof(dto.UserId)),
-                Group = group ?? throw new ArgumentException(nameof(dto.UserId))
+                Degree = degree ?? throw new ArgumentException(nameof(dto.UserId)),
+                Faculty = faculty ?? throw new ArgumentException(nameof(dto.FacultyId))
             };
 
-            var id = await _studentProfileRepository.Create(sp);
-            user.StudentProfile = sp;
-            user.StudentProfileId = id;
+            var id = await _teacherProfileRepository.Create(tp);
+            user.TeacherProfile = tp;
+            user.TeacherProfileId = id;
             await _userManager.UpdateAsync(user);
             return NoContent();
         }
@@ -56,9 +63,9 @@ namespace UniversityAPI.Controllers
         [ProducesResponseType(203)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public IActionResult Update(StudentProfile studentProfile)
+        public IActionResult Update(TeacherProfile teacherProfile)
         {
-            _studentProfileRepository.Update(studentProfile);
+            _teacherProfileRepository.Update(teacherProfile);
             return NoContent();
         }
         [HttpDelete]
@@ -66,7 +73,7 @@ namespace UniversityAPI.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> Delete(int id)
         {
-            await _studentProfileRepository.Delete(id);
+            await _teacherProfileRepository.Delete(id);
             return NoContent();
         }
     }
