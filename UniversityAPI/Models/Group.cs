@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public int Year { get; set; }
+        public int Year { get; set; } = 1;
 
         public List<TeacherGroupSubject> TeacherGroupSubjects { get; set; } = [];
         public List<StudentProfile> Students { get; set; } = [];
