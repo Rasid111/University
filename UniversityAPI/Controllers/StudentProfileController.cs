@@ -49,7 +49,6 @@ namespace UniversityAPI.Controllers
             var id = await _studentProfileRepository.Create(sp);
             user.StudentProfile = sp;
             user.StudentProfileId = id;
-            await _userManager.AddToRoleAsync(user, "Student");
             await _userManager.UpdateAsync(user);
             return NoContent();
         }

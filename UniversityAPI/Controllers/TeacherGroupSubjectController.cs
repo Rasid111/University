@@ -68,5 +68,18 @@ namespace UniversityAPI.Controllers
             await _teacherGroupSubjectRepository.Delete(id);
             return NoContent();
         }
+
+        [HttpGet("{teacherId}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetGroupsByTeacher(int teacherId)
+        {
+            var groups = await _teacherGroupSubjectRepository.GetGroupsByTeacherId(teacherId);
+            if (groups == null || !groups.Any())
+                return NotFound("No groups found for this teacher.");
+
+            return Ok(groups);
+        }
+
     }
 }
