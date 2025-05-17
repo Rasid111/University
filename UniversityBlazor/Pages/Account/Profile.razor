@@ -5,6 +5,7 @@
 @inject ProfileService profileService
 @using System.Security.Claims
 @using UniversityBlazor.Services
+@using UniversityBlazor.ViewModels
 
 @if (isLoading)
 {
@@ -24,16 +25,20 @@ else
                 </div>
                 <h1 class="d-inline-block">@profile.Name @profile.Surname</h1>
             </div>
-            <div class="col-12 col-xl-4">
-                <h3>Student</h3>
-                <span>at group: <a href="/group/@profile.StudentProfile.Group.Id">@profile.StudentProfile.Group.Name</a></span>
-                <br />
-                <span>@profile.StudentProfile.Group.Faculty.Name</span>
-            </div>
-            <div class="col-12 col-xl-4 mt-3">
-                <h3>@profile.TeacherProfile.Degree.Name</h3>
-                <span>at @profile.TeacherProfile.Faculty.Name</span>
-            </div>
+            @if (profile.StudentProfile is not null){
+                <div class="col-12 col-xl-4">
+                    <h3>Student</h3>
+                    <span>at group: <a href="/group/@profile.StudentProfile.Group.Id">@profile.StudentProfile.Group.Name</a></span>
+                    <br />
+                    <span>@profile.StudentProfile.Group.Faculty.Name</span>
+                </div>
+            }
+            @if (profile.TeacherProfile is not null){
+                <div class="col-12 col-xl-4 mt-3">
+                    <h3>@profile.TeacherProfile.Degree.Name</h3>
+                    <span>at @profile.TeacherProfile.Faculty.Name</span>
+                </div>
+            }
         </div>
     </div>
 

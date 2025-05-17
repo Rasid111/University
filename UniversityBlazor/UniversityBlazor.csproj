@@ -15,8 +15,8 @@
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.10.0" />
 	</ItemGroup>
 
-	<!--<ItemGroup>
+	<ItemGroup>
 	  <ProjectReference Include="..\UniversityApplication\UniversityApplication.csproj" />
-	</ItemGroup>-->
+	</ItemGroup>
 
 </Project>

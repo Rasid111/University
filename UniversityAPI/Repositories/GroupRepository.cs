@@ -24,14 +24,22 @@ namespace UniversityAPI.Repositories
 
         public async Task<List<Group>> Get()
         {
-            return await _context.Groups.ToListAsync();
+              return await _context.Groups
+                .Include(g => g.Students)
+                .Include(g => g.Faculty)
+                .Include(g => g.Major)
+                .ToListAsync();
         }
 
         public async Task<Group?> Get(int id)
         {
-            return await _context.Groups.FirstOrDefaultAsync(d => d.Id == id);
+            return await _context.Groups
+                .Include(g => g.Students)
+                    .ThenInclude(s => s.User)
+                .Include(g => g.Faculty)
+                .Include(g => g.Major)
+                .FirstOrDefaultAsync(d => d.Id == id);
         }
-
         public void Update(Group entity)
         {
             _context.Groups.Update(entity);

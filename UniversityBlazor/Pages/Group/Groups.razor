@@ -1,0 +1,85 @@
+@page "/groups"
+@attribute [Authorize]
+@inject IHttpClientFactory HttpClientFactory
+@inject ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ProfileService ProfileService
+@using UniversityBlazor.ViewModels
+@using UniversityBlazor.Services
+@using System.Security.Claims
+
+<h3>Your Groups</h3>
+
+@if (isLoading)
+{
+    <p><em>Loading groups...</em></p>
+}
+else if (!groups.Any())
+{
+    <div class="alert alert-info">You are not assigned to any groups.</div>
+}
+else
+{
+    <div class="list-group">
+        @foreach (var group in groups)
+        {
+            <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+               href="@($"/groups/{group.Id}")">
+                <div>
+                    <strong>@group.Name</strong> – Year @group.Year<br />
+                    <small>@($"{group.Faculty?.Name ?? "No Faculty"} | {group.Major?.Name ?? "No Major"}")</small>
+                </div>
+                <span class="badge bg-primary">@((group.Students?.Count ?? 0)) student(s)</span>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    private List<Group> groups = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userId))
+                return;
+
+            var profile = await ProfileService.GetProfileAsync(userId);
+
+            if (profile?.TeacherProfileId is int teacherId)
+            {
+                var jwt = await LocalStorage.GetItemAsStringAsync("jwt");
+
+                var httpClient = HttpClientFactory.CreateClient("UniversityBack");
+                httpClient.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", jwt);
+
+                var response = await httpClient.GetAsync($"api/TeacherGroupSubject/GetGroupsByTeacher/{teacherId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<List<Group>>();
+                    if (result is not null)
+                        groups = result;
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to load groups: {response.StatusCode}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error fetching groups: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

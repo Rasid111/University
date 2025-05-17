@@ -1,0 +1,208 @@
+@page "/groups/{id:int}"
+@attribute [Authorize]
+@inject IHttpClientFactory HttpClientFactory
+@inject ILocalStorageService LocalStorage
+@using UniversityBlazor.ViewModels
+@using System.Net.Http.Headers
+@using System.ComponentModel.DataAnnotations
+
+<h3>Group: @group?.Name</h3>
+
+@if (isLoading)
+{
+    <p><em>Loading group...</em></p>
+}
+else if (group == null)
+{
+    <div class="alert alert-danger">Group not found.</div>
+}
+else
+{
+    <p><strong>Faculty:</strong> @group.Faculty?.Name</p>
+    <p><strong>Major:</strong> @group.Major?.Name</p>
+
+    <h5 class="mt-4">Students</h5>
+
+    @if (group.Students == null || !group.Students.Any())
+    {
+        <p>No students in this group.</p>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var student in group.Students)
+                {
+                    <tr>
+                        <td>@student.User.Name @student.User.Surname</td>
+                        <td>@student.User.Email</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => GradeStudent(student.Id)">
+                                Grade
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+<!-- Grade Modal -->
+<div class="modal fade @(showModal ? "show d-block" : "")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" role="dialog">
+    <div class="modal-dialog" role="document">
+        <EditForm Model="grade" OnValidSubmit="SubmitGrade">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Grade for @selectedStudentName</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label class="form-label">Grade (0–100)</label>
+                        <InputNumber class="form-control" @bind-Value="grade.Value" />
+                        <ValidationMessage For="@(() => grade.Value)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Message (optional)</label>
+                        <InputTextArea class="form-control" @bind-Value="grade.Message" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" @onclick="CloseModal">Cancel</button>
+                    <button class="btn btn-primary" type="submit" disabled="@(!isGradeValid)">Submit</button>
+                </div>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@if (showModal)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public int id { get; set; }
+
+    private Group? group;
+    private bool isLoading = true;
+
+    private bool showModal = false;
+    private string selectedStudentName = "";
+    private int selectedStudentId;
+    private ValidatableGradeCreateDto grade = new();
+
+    private bool isGradeValid => grade.Value >= 0 && grade.Value <= 100;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var jwt = await LocalStorage.GetItemAsStringAsync("jwt");
+            var client = HttpClientFactory.CreateClient("UniversityBack");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+            var response = await client.GetAsync($"api/GroupContoller/Get/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                group = await response.Content.ReadFromJsonAsync<Group>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Failed to load group: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void GradeStudent(int studentId)
+    {
+        var student = group?.Students.FirstOrDefault(s => s.Id == studentId);
+        if (student == null) return;
+
+        selectedStudentId = studentId;
+        selectedStudentName = $"{student.User.Name} {student.User.Surname}";
+
+        var teacher = group?.TeacherGroupSubjects.FirstOrDefault();
+
+        grade = new ValidatableGradeCreateDto
+        {
+            StudentProfileId = studentId,
+            TeacherProfileId = teacher?.TeacherProfileId,
+            SubjectId = teacher?.SubjectId ?? 0,
+            Value = 0,
+            Message = ""
+        };
+
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        selectedStudentId = 0;
+        selectedStudentName = "";
+        grade = new ValidatableGradeCreateDto
+        {
+            SubjectId = 0,
+            Value = 0,
+            Message = ""
+        };
+    }
+
+    private async Task SubmitGrade()
+    {
+        try
+        {
+            var jwt = await LocalStorage.GetItemAsStringAsync("jwt");
+            var client = HttpClientFactory.CreateClient("UniversityBack");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+            var response = await client.PostAsJsonAsync("api/Grade/Create", grade);
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Grade submitted");
+                CloseModal();
+            }
+            else
+            {
+                Console.WriteLine("Failed to submit grade");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+    }
+
+    public class ValidatableGradeCreateDto
+    {
+        [Range(0, 100, ErrorMessage = "Grade must be between 0 and 100")]
+        public int Value { get; set; }
+
+        public string? Message { get; set; }
+
+        public int SubjectId { get; set; }
+
+        public int? StudentProfileId { get; set; }
+
+        public int? TeacherProfileId { get; set; }
+
+        public DateTime? Date { get; set; } = DateTime.Now;
+    }
+}

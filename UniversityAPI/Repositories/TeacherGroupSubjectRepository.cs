@@ -46,12 +46,17 @@ namespace UniversityAPI.Repositories
             _context.SaveChanges();
         }
 
-        public async Task<List<Group>> GetGroupsByTeacherId(int teacherProfileId)
+        public async Task<List<Group>> GetGroupsByTeacherId(int teacherId)
         {
             return await _context.TeacherGroupSubjects
-                .Where(tgs => tgs.TeacherProfileId == teacherProfileId)
-                .Select(tgs => tgs.Group)
-                .Distinct()
+                .Where(x => x.TeacherProfileId == teacherId)
+                .Include(x => x.Group)
+                    .ThenInclude(g => g.Students)
+                .Include(x => x.Group)
+                    .ThenInclude(g => g.Faculty)
+                .Include(x => x.Group)
+                    .ThenInclude(g => g.Major)
+                .Select(x => x.Group)
                 .ToListAsync();
         }
 
