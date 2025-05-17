@@ -45,5 +45,15 @@ namespace UniversityAPI.Repositories
             _context.TeacherGroupSubjects.Update(entity);
             _context.SaveChanges();
         }
+
+        public async Task<List<Group>> GetGroupsByTeacherId(int teacherProfileId)
+        {
+            return await _context.TeacherGroupSubjects
+                .Where(tgs => tgs.TeacherProfileId == teacherProfileId)
+                .Select(tgs => tgs.Group)
+                .Distinct()
+                .ToListAsync();
+        }
+
     }
 }
