@@ -3,7 +3,7 @@ namespace UniversityAPI.Models
     public class Grade
     {
         public int Id { get; set; }
-        public required string Message { get; set; }
+        public string? Message { get; set; }
         public required int Value { get; set; }
         public int SubjectId { get; set; }
         public int? StudentProfileId { get; set; }

@@ -1,0 +1,70 @@
+﻿@page "/login"
+@inject IHttpClientFactory httpClientFactory
+@inject NavigationManager navigationManager 
+@inject IJSRuntime jsRuntime
+@inject ILocalStorageService localStorageService
+@inject AuthenticationStateProvider authenticationStateProvider
+
+<PageTitle>Login</PageTitle>
+
+<h1>login</h1>
+
+<EditForm Model="loginDto" OnValidSubmit="OnLoginFormValidSumbit">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+
+    <div class="@AlertVisibleClass alert alert-danger" role="alert">
+        @httpResponseErrorMessage
+    </div>
+    
+    <div class="mb-3">
+        <label for="email" class="form-label">Login</label>
+        <input type="email" class="form-control" id="email" @bind-value=loginDto.Email>
+    </div>
+
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" id="password" @bind-value=loginDto.Password>
+    </div>
+
+    <button class="btn btn-success">Login</button>
+</EditForm>
+
+@code {
+    private string? httpResponseErrorMessage;
+    public string? AlertVisibleClass => string.IsNullOrEmpty(httpResponseErrorMessage) ? "invisible" : "visible";
+
+    public class LoginDto
+    {
+        public required string Email { get; set; }
+        public required string Password { get; set; }
+    }
+    public LoginDto loginDto { get; set; } = new() { Email = "", Password = "" };
+
+    public async Task OnLoginFormValidSumbit() {
+        httpResponseErrorMessage = null;
+        var httpClient = httpClientFactory.CreateClient("UniversityBack");
+
+        var loginHttpResponse = await httpClient.PostAsJsonAsync("/api/account/Login", loginDto, CancellationToken.None);
+
+
+        if(loginHttpResponse.IsSuccessStatusCode == false) {
+            httpResponseErrorMessage = await loginHttpResponse.Content.ReadAsStringAsync();
+            return;
+        }
+
+        var refreshAccessTokens = await loginHttpResponse.Content.ReadFromJsonAsync<RefreshAccessTokens>();
+
+        if(refreshAccessTokens is null) {
+            httpResponseErrorMessage = "Error in login";
+            return;
+        }
+
+        await localStorageService.SetItemAsStringAsync("jwt", refreshAccessTokens.Access);
+        await localStorageService.SetItemAsStringAsync("refresh", refreshAccessTokens.Refresh);
+
+        await authenticationStateProvider.GetAuthenticationStateAsync();
+
+        navigationManager.NavigateTo("/", true);
+    }
+}
