@@ -11,38 +11,45 @@ namespace UniversityAPI.Controllers
     [ApiController]
     [ProducesResponseType(401)]
     [ProducesResponseType(500)]
-    public class MajorController(MajorRepository repository) : ControllerBase
+    public class ScheduleContoller(ScheduleRepository scheduleRepository, TeacherGroupSubjectRepository tgcRepository) : ControllerBase
     {
-        readonly MajorRepository _repository = repository;
+        readonly ScheduleRepository _scheduleRepository = scheduleRepository;
+        TeacherGroupSubjectRepository _tgcRepository = tgcRepository;
         [HttpGet]
         [ProducesResponseType(200)]
         public async Task<IActionResult> Get()
         {
-            var majors = await _repository.Get();
-            return Ok(majors);
+            return Ok(await _scheduleRepository.Get());
         }
         [HttpGet("{id}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Get(int id)
         {
-            return Ok(await _repository.Get(id));
+            return Ok(await _scheduleRepository.Get(id));
         }
         [HttpPost]
         [ProducesResponseType(203)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> Create(MajorCreateDto dto)
+        public async Task<IActionResult> Create(ScheduleElementCreateDto dto)
         {
-            await _repository.Create(new Major() { Name = dto.Name });
+            var tgc = await _tgcRepository.Get(dto.TeacherGroupSubjectId);
+            await _scheduleRepository.Create(new ScheduleElement()
+            {
+                TeacherGroupSubject = tgc ?? throw new ArgumentException(nameof(dto.TeacherGroupSubjectId)),
+                DayOfWeek = dto.DayOfWeek,
+                StartTime = dto.StartTime,
+                EndTime = dto.EndTime,
+            });
             return NoContent();
         }
         [HttpPut]
         [ProducesResponseType(203)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public IActionResult Update(Major major)
+        public IActionResult Update(ScheduleElement scheduleElement)
         {
-            _repository.Update(major);
+            _scheduleRepository.Update(scheduleElement);
             return NoContent();
         }
         [HttpDelete]
@@ -50,7 +57,7 @@ namespace UniversityAPI.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> Delete(int id)
         {
-            await _repository.Delete(id);
+            await _scheduleRepository.Delete(id);
             return NoContent();
         }
     }

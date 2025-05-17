@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using UniversityAPI.EntityFramework;
 using UniversityAPI.Models;
@@ -24,7 +24,11 @@ namespace UniversityAPI.Extensions
             services.AddScoped<TestRepository>();
             services.AddScoped<UserRepository>();
             services.AddScoped<TeacherProfileRepository>();
+
             services.AddScoped<GradeRepository>();
+            services.AddScoped<ScheduleRepository>();
+            services.AddScoped<TeacherGroupSubjectRepository>();
+
         }
         public static void AddUniversityDbContext(this IServiceCollection serviceCollection, IConfiguration configuration)
         {

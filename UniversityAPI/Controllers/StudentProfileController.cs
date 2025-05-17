@@ -38,7 +38,9 @@ namespace UniversityAPI.Controllers
         {
             var user = await _userManager.FindByIdAsync(dto.UserId.ToString());
             var group = await _groupRepository.Get(dto.GroupId);
-            await _studentProfileRepository.Create(new StudentProfile() { User = user ?? throw new ArgumentException(nameof(dto.UserId)), Group = group ?? throw new ArgumentException(nameof(dto.UserId)) });
+            await _studentProfileRepository.Create(new StudentProfile() {
+                User = user ?? throw new ArgumentException(nameof(dto.UserId)),
+                Group = group ?? throw new ArgumentException(nameof(dto.UserId)) });
             return NoContent();
         }
         [HttpPut]
