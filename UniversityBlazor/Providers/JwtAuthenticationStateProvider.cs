@@ -28,10 +28,10 @@ public class JwtAuthenticationStateProvider(
             new TokenValidationParameters
             {
                 ValidateIssuer = true,
-                ValidIssuer = "MyApplication",
+                ValidIssuer = "University",
 
                 ValidateAudience = true,
-                ValidAudience = "Big Company",
+                ValidAudience = "User",
 
                 SignatureValidator = (token, validationParameters) => new JwtSecurityToken(token),
 
@@ -45,9 +45,9 @@ public class JwtAuthenticationStateProvider(
         {
             if (result.Exception is SecurityTokenInvalidLifetimeException)
             {
-                var identityServiceHttpClient = httpClientFactory.CreateClient("IdentityService");
+                var identityServiceHttpClient = httpClientFactory.CreateClient("UniversityBack");
                 identityServiceHttpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {jwt}");
-                var httpResult = await identityServiceHttpClient.PutAsync($"/api/Identity/Token?refresh={refresh}", null);
+                var httpResult = await identityServiceHttpClient.PutAsync($"/api/account/Token?refresh={refresh}", null);
 
                 if (httpResult.IsSuccessStatusCode == false)
                 {

@@ -1,0 +1,31 @@
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using UniversityAPI.EntityFramework;
+using UniversityAPI.Models;
+
+namespace UniversityAPI.Repositories
+{
+    public class UserRepository(UniversityDbContext context, UserManager<User> userManager)
+    {
+        readonly UniversityDbContext _context = context;
+        readonly UserManager<User> _userManager = userManager;
+        public async Task<User?> Get(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+            if (user is not null)
+            {
+                if (user.StudentProfileId is not null)
+                {
+                    user.StudentProfile = _context.StudentProfiles
+                        .FirstOrDefault(sp => sp.Id == user.StudentProfileId);
+                }
+                if (user.StudentProfileId is not null)
+                {
+                    user.StudentProfile = _context.StudentProfiles.FirstOrDefault(sp => sp.Id == user.StudentProfileId);
+                }
+            }
+            return user;
+        }
+    }
+}

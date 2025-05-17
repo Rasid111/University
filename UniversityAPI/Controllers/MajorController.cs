@@ -1,93 +1,56 @@
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using UniversityAPI.Database;
-using UniversityAPI.Dtos;
 using UniversityAPI.Models;
+using UniversityAPI.Repositories;
+using UniversityApplication.Dtos;
 
 namespace UniversityAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize]
+    [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize(Roles = "Teacher,Admin")]
-    public class MajorsController : ControllerBase
+    [ProducesResponseType(401)]
+    [ProducesResponseType(500)]
+    public class MajorController(MajorRepository repository) : ControllerBase
     {
-        private readonly UniversityDbContext _context;
-
-        public MajorsController(UniversityDbContext context)
-        {
-            _context = context;
-        }
-
+        readonly MajorRepository _repository = repository;
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MajorDto>>> GetAll()
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> Get()
         {
-            var majors = await _context.Majors.ToListAsync();
-
-            var dtoList = majors.Select(m => new MajorDto
-            {
-                Id = m.Id,
-                Name = m.Name
-            }).ToList();
-
-            return Ok(dtoList);
+            var majors = await _repository.Get();
+            return Ok(majors);
         }
-
         [HttpGet("{id}")]
-        public async Task<ActionResult<MajorDto>> GetById(int id)
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> Get(int id)
         {
-            var major = await _context.Majors.FindAsync(id);
-            if (major == null) return NotFound();
-
-            return Ok(new MajorDto
-            {
-                Id = major.Id,
-                Name = major.Name
-            });
+            return Ok(await _repository.Get(id));
         }
-
         [HttpPost]
-        public async Task<ActionResult<MajorDto>> Create(CreateMajorDto dto)
+        [ProducesResponseType(203)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> Create(DegreeCreateDto dto)
         {
-            var major = new Major
-            {
-                Name = dto.Name
-            };
-
-            _context.Majors.Add(major);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = major.Id }, new MajorDto
-            {
-                Id = major.Id,
-                Name = major.Name
-            });
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, UpdateMajorDto dto)
-        {
-            if (id != dto.Id) return BadRequest("ID mismatch");
-
-            var major = await _context.Majors.FindAsync(id);
-            if (major == null) return NotFound();
-
-            major.Name = dto.Name;
-            await _context.SaveChangesAsync();
-
+            await _repository.Create(new Major() { Name = dto.Name });
             return NoContent();
         }
-
-        [HttpDelete("{id}")]
+        [HttpPut]
+        [ProducesResponseType(203)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public IActionResult Update(Major major)
+        {
+            _repository.Update(major);
+            return NoContent();
+        }
+        [HttpDelete]
+        [ProducesResponseType(203)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> Delete(int id)
         {
-            var major = await _context.Majors.FindAsync(id);
-            if (major == null) return NotFound();
-
-            _context.Majors.Remove(major);
-            await _context.SaveChangesAsync();
-
+            await _repository.Delete(id);
             return NoContent();
         }
     }

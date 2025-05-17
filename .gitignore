@@ -3,6 +3,7 @@
 
 # Custom
 *.http
+*.DS_Store
 Keys/
 
 # User-specific files

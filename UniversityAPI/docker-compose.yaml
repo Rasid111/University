@@ -8,21 +8,21 @@ services:
       - 1434:1433
     environment:
       - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=secret12345!
+      - MSSQL_SA_PASSWORD=Secret12345!
     volumes:
       - mssql_volume:/var/opt/mssql 
     networks:
       - university_network
     restart: always
 
-  webapi:
-    image: webapi
+  universityapi:
+    image: universityapi
     build:
       context: .
       dockerfile: Dockerfile
     container_name: mvc
     expose:
-      - 5001
+      - 5000
     ports:
       - 5000:8080
     networks:

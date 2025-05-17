@@ -1,92 +1,56 @@
-
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using UniversityAPI.Database;
-using UniversityAPI.Dtos;
 using UniversityAPI.Models;
+using UniversityAPI.Repositories;
+using UniversityApplication.Dtos;
 
 namespace UniversityAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize]
+    [Route("api/[controller]/[action]")]
     [ApiController]
-    [Authorize(Roles = "Teacher,Admin")]
-    public class DegreesController : ControllerBase
+    [ProducesResponseType(401)]
+    [ProducesResponseType(500)]
+    public class DegreeController(DegreeRepository repository) : ControllerBase
     {
-        private readonly UniversityDbContext _context;
-
-        public DegreesController(UniversityDbContext context)
-        {
-            _context = context;
-        }
-
+        readonly DegreeRepository _repository = repository;
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<DegreeDto>>> GetAll()
+        [ProducesResponseType(200)]
+        public async Task<IActionResult> Get()
         {
-            var degrees = await _context.Degrees.ToListAsync();
-            var dtoList = degrees.Select(d => new DegreeDto
-            {
-                Id = d.Id,
-                Name = d.Name
-            }).ToList();
-
-            return Ok(dtoList);
+            var degrees = await _repository.Get();
+            return Ok(degrees);
         }
-
         [HttpGet("{id}")]
-        public async Task<ActionResult<DegreeDto>> GetById(int id)
+        [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> Get(int id)
         {
-            var degree = await _context.Degrees.FindAsync(id);
-            if (degree == null) return NotFound();
-
-            return Ok(new DegreeDto
-            {
-                Id = degree.Id,
-                Name = degree.Name
-            });
+            return Ok(await _repository.Get(id));
         }
-
         [HttpPost]
-        public async Task<ActionResult<DegreeDto>> Create(CreateDegreeDto dto)
+        [ProducesResponseType(203)]
+        [ProducesResponseType(400)]
+        public async Task<IActionResult> Create(DegreeCreateDto dto)
         {
-            var degree = new Degree
-            {
-                Name = dto.Name
-            };
-
-            _context.Degrees.Add(degree);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetById), new { id = degree.Id }, new DegreeDto
-            {
-                Id = degree.Id,
-                Name = degree.Name
-            });
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, UpdateDegreeDto dto)
-        {
-            if (id != dto.Id) return BadRequest("ID mismatch");
-
-            var degree = await _context.Degrees.FindAsync(id);
-            if (degree == null) return NotFound();
-
-            degree.Name = dto.Name;
-            await _context.SaveChangesAsync();
-
+            await _repository.Create(new Degree() { Name = dto.Name });
             return NoContent();
         }
-
-        [HttpDelete("{id}")]
+        [HttpPut]
+        [ProducesResponseType(203)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(404)]
+        public IActionResult Update(Degree degree)
+        {
+            _repository.Update(degree);
+            return NoContent();
+        }
+        [HttpDelete]
+        [ProducesResponseType(203)]
+        [ProducesResponseType(404)]
         public async Task<IActionResult> Delete(int id)
         {
-            var degree = await _context.Degrees.FindAsync(id);
-            if (degree == null) return NotFound();
-
-            _context.Degrees.Remove(degree);
-            await _context.SaveChangesAsync();
-
+            await _repository.Delete(id);
             return NoContent();
         }
     }
