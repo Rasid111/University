@@ -1,10 +1,12 @@
-using Microsoft.Extensions.Configuration;
-using UniversityAPI.Models;
-using UniversityAPI.Extensions;
-using UniversityAPI.EntityFramework;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Text.Json.Serialization;
+using UniversityAPI.EntityFramework;
+using UniversityAPI.Extensions;
+using UniversityAPI.Models;
+using UniversityAPI.Services;
+
 namespace UniversityAPI
 {
     public class Program
@@ -13,40 +15,55 @@ namespace UniversityAPI
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Add controllers with reference loop fix
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
                 });
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
 
-            builder.Services.AddRepositories();
+            // Swagger/OpenAPI support
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.InitSwagger();
+
+            // Add database and Identity
             builder.Services.AddUniversityDbContext(builder.Configuration);
             builder.Services.AddAspNetIdentity();
+
+            // Add custom repositories
+            builder.Services.AddRepositories();
+
+            // Add authentication and CORS
             builder.Services.InitAuth(builder.Configuration);
-            builder.Services.InitSwagger();
             builder.Services.InitCors();
+
+            // Add BlobService for file uploads
+            builder.Services.AddSingleton<BlobService>();
 
             var app = builder.Build();
 
-            var serviceScopeFactory = app.Services.GetRequiredService<IServiceScopeFactory>();
-            using var scope = serviceScopeFactory.CreateScope();
+            // Apply pending migrations and seed roles
+            using (var scope = app.Services.CreateScope())
             {
-                var universityDbContext = scope.ServiceProvider.GetRequiredService<UniversityDbContext>();
-                universityDbContext.Database.Migrate();
+                var db = scope.ServiceProvider.GetRequiredService<UniversityDbContext>();
+                db.Database.Migrate();
+
                 var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
                 await roleManager.CreateAsync(new IdentityRole(UserRoleDefaults.User));
                 await roleManager.CreateAsync(new IdentityRole(UserRoleDefaults.Admin));
             }
 
+            // Middleware pipeline
             app.UseSwagger();
             app.UseSwaggerUI();
+
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.MapControllers();
+
             app.UseCors("University");
+
+            app.MapControllers();
             app.Run();
         }
     }
