@@ -17,6 +17,7 @@ namespace UniversityBlazor
 
             builder.Services.AddScoped<AuthenticationStateProvider, JwtAuthenticationStateProvider>();
             builder.Services.AddScoped<ProfileService>();
+            builder.Services.AddScoped<TestService>();
             builder.Services.AddAuthorizationCore();
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });

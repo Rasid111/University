@@ -29,13 +29,21 @@ namespace UniversityAPI.Repositories
 
         public async Task<Test?> Get(int id)
         {
-            return await _context.Tests.FirstOrDefaultAsync(d => d.Id == id);
+            return await _context.Tests
+                .Include(t => t.Questions)
+                .ThenInclude(q => q.Answers)
+                .FirstOrDefaultAsync(d => d.Id == id);
         }
 
         public void Update(Test entity)
         {
             _context.Tests.Update(entity);
             _context.SaveChanges();
+        }
+
+        public async Task SaveResults(TestResult result)
+        {
+            await _context.TestAnswersResults.AddAsync(result);
         }
     }
 }

@@ -1,0 +1,148 @@
+﻿@page "/test/{testId:int}"
+@inject AuthenticationStateProvider authenticationStateProvider
+@inject ProfileService profileService
+@inject TestService testService
+@using System.Security.Claims
+@using UniversityBlazor.Services
+@using UniversityBlazor.ViewModels
+
+@if (currentQuestion >= 0 && currentQuestion < test?.Questions.Count && testPassResult is null)
+{
+    <div class="question-container">
+        <h3>Question @(currentQuestion + 1) of @test.Questions.Count</h3>
+        <p>@test.Questions[currentQuestion].Title</p>
+
+        <div class="answers-container">
+            @foreach (var answer in test.Questions[currentQuestion].Answers)
+            {
+                <div class="answer-option">
+                    <label>
+                        <input type="radio"
+                               name="question@currentQuestionIndex"
+                               value="@answer.Title"
+                               @onchange="() => SelectAnswer(answer.Title)"
+                               checked="@(StudentAnswers[currentQuestion] != "" && StudentAnswers[currentQuestion] == answer.Title)" />
+                        @answer.Title
+                    </label>
+                </div>
+            }
+        </div>
+
+        <div class="navigation-buttons">
+            @if (currentQuestion > 0)
+            {
+                <button @onclick="PreviousQuestion">Previous</button>
+            }
+
+            @if (currentQuestion < test.Questions.Count - 1)
+            {
+                <button @onclick="NextQuestion">Next</button>
+            }
+            else
+            {
+                <button @onclick="SubmitTest">Submit</button>
+            }
+        </div>
+    </div>
+}
+@if (testPassResult is not null)
+{
+    <div class="results-container">
+        <h2>Test Results</h2>
+        <p>You scored @correctAnswersCount out of @test.Questions.Count</p>
+
+        @for (int i = 0; i < test.Questions.Count; i++)
+        {
+            <div class="question-result border @(test.Questions[i].CorrectAnswerTitle == StudentAnswers[i] ? "correct" : "incorrect")">
+                <p><strong>Question:</strong> @test.Questions[i].Title</p>
+                <p><strong>Your answer:</strong> @StudentAnswers[i]</p>
+                <p><strong>Correct answer:</strong> @test.Questions[i].CorrectAnswerTitle</p>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    int currentQuestion = 0;
+    private List<string> StudentAnswers { get; set; } = [];
+
+    ViewModels.Test? test;
+    private string? selectedAnswer;
+    [Parameter]
+    public int testId { get; set; }
+
+    private User? profile = new()
+    {
+        Name = "",
+        Surname = "",
+        Email = ""
+    };
+    private void PreviousQuestion()
+    {
+        currentQuestion--;
+        selectedAnswer = null;
+    }
+    private void NextQuestion()
+    {
+        currentQuestion++;
+        selectedAnswer = null;
+    }
+    private async Task SubmitTest()
+    {
+        for (int i = 0; i < test.Questions.Count; i++)
+        {
+            if (test.Questions[i].CorrectAnswerTitle == StudentAnswers[i])
+            {
+                correctAnswersCount++;
+            }
+        }
+        testPassResult = await testService.SubmitTest(testId, StudentAnswers);
+    }
+
+    private void SelectAnswer(string answer)
+    {
+        StudentAnswers[currentQuestion] = answer;
+        selectedAnswer = answer;
+    }
+
+    private bool isLoading = true;
+    private string successMessage = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private int correctAnswersCount = 0;
+    private TestPassResult? testPassResult;
+    private bool isStudent;
+    private bool isTeacher;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            isStudent = authState.User.IsInRole("Student");
+            isTeacher = authState.User.IsInRole("Teacher");
+            if (userId != null)
+            {
+                profile = await profileService.GetProfileAsync(userId);
+            }
+            if (isStudent)
+            {
+                test = await testService.GetTestById(testId);
+                for (int i = 0; i < test.Questions.Count; i++)
+                {
+                    StudentAnswers.Add("");
+                }
+            }
+
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error while loading profile: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

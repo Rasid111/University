@@ -24,6 +24,7 @@ namespace UniversityAPI.Extensions
             services.AddScoped<TestRepository>();
             services.AddScoped<UserRepository>();
             services.AddScoped<TeacherProfileRepository>();
+            services.AddScoped<QuestionAnswerRepository>();
 
             services.AddScoped<GradeRepository>();
             services.AddScoped<ScheduleRepository>();

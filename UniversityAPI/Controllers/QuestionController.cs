@@ -11,44 +11,44 @@ namespace UniversityAPI.Controllers
     [ApiController]
     [ProducesResponseType(401)]
     [ProducesResponseType(500)]
-    public class SubjectController(SubjectRepository subjectRepository) : ControllerBase
+    public class QuestionController(TestRepository testRepository, QuestionRepository questionRepository) : ControllerBase
     {
-        readonly SubjectRepository _subjectRepository = subjectRepository;
+        readonly TestRepository _testRepository = testRepository;
+        readonly QuestionRepository _questionRepository = questionRepository;
         [HttpGet]
         [ProducesResponseType(200)]
         public async Task<IActionResult> Get()
         {
-            return Ok(await _subjectRepository.Get());
+            return Ok(await _questionRepository.Get());
         }
         [HttpGet("{id}")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Get(int id)
         {
-            return Ok(await _subjectRepository.Get(id));
-        }
-        [HttpGet("{id}")]
-        [ProducesResponseType(200)]
-        [ProducesResponseType(404)]
-        public async Task<IActionResult> GetByUserId(int id)
-        {
-            return Ok(await _subjectRepository.GetByUserId(id));
+            return Ok(await _questionRepository.Get(id));
         }
         [HttpPost]
         [ProducesResponseType(203)]
         [ProducesResponseType(400)]
-        public async Task<IActionResult> Create(SubjectCreateDto dto)
+        public async Task<IActionResult> Create(QuestionCreateDto dto)
         {
-            await _subjectRepository.Create(new Subject() { Name = dto.Name });
+            var test = await _testRepository.Get(dto.TestId);
+            await _questionRepository.Create(new Question()
+            {
+                Title = dto.Title,
+                CorrectAnswerTitle = dto.CorrectAnswerTitle,
+                Test = test ?? throw new ArgumentNullException(nameof(dto.TestId)),
+            });
             return NoContent();
         }
         [HttpPut]
         [ProducesResponseType(203)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
-        public IActionResult Update(Subject subject)
+        public IActionResult Update(Question question)
         {
-            _subjectRepository.Update(subject);
+            _questionRepository.Update(question);
             return NoContent();
         }
         [HttpDelete]
@@ -56,7 +56,7 @@ namespace UniversityAPI.Controllers
         [ProducesResponseType(404)]
         public async Task<IActionResult> Delete(int id)
         {
-            await _subjectRepository.Delete(id);
+            await _questionRepository.Delete(id);
             return NoContent();
         }
     }

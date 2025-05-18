@@ -1,0 +1,85 @@
+﻿@page "/subjects"
+@inject AuthenticationStateProvider authenticationStateProvider
+@inject ProfileService profileService
+@inject TestService testService
+@using System.Security.Claims
+@using UniversityBlazor.Services
+@using UniversityBlazor.ViewModels
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else if (profile == null)
+{
+    <p>Failed</p>
+}
+else
+{
+    <div class="accordion" id="accordionExample">
+        @foreach (var subject in subjects)
+        {
+            <div class="accordion-item">
+                <h2 class="accordion-header">
+                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                        @subject.Name
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#accordionExample">
+                    <div class="accordion-body">
+                        @foreach (var test in subject.Tests)
+                        {
+                            <div>
+                                <a href=@($"/test/{test.Id}")>@test.Title</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private User? profile = new()
+        {
+            Name = "",
+            Surname = "",
+            Email = ""
+        };
+    private bool isLoading = true;
+    private string successMessage = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private bool isStudent;
+    private bool isTeacher;
+
+    private List<Subject> subjects = [];
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            isStudent = authState.User.IsInRole("Student");
+            isTeacher = authState.User.IsInRole("Teacher");
+            if (userId != null)
+            {
+                profile = await profileService.GetProfileAsync(userId);
+            }
+            if (isStudent)
+            {
+                subjects = await testService.GetSubjectsByStudentId(profile.StudentProfileId.Value);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Error while loading profile: " + ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
