@@ -29,20 +29,24 @@ else
     }
     else
     {
-        <table class="table table-striped">
+        <table class="table table-striped align-middle">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Grade</th>
+                    <th>Student</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var student in group.Students)
                 {
                     <tr>
-                        <td>@student.User.Name @student.User.Surname</td>
-                        <td>@student.User.Email</td>
+                        <td class="d-flex align-items-center gap-2">
+                            <img src="@((string.IsNullOrEmpty(student.User.ProfilePictureUrl) ? "/default_pfp.svg" : student.User.ProfilePictureUrl))"
+                                 alt="pfp"
+                                 class="rounded-circle border"
+                                 style="width: 28px; height: 28px; object-fit: cover;" />
+                            <span class="small">@student.User.Name @student.User.Surname</span>
+                        </td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary" @onclick="() => GradeStudent(student.Id)">
                                 Grade
@@ -169,6 +173,10 @@ else
     {
         try
         {
+            var teacher = group?.TeacherGroupSubjects.FirstOrDefault();
+            grade.SubjectId = teacher?.SubjectId ?? 0;
+            grade.TeacherProfileId = teacher?.TeacherProfileId;
+
             var jwt = await LocalStorage.GetItemAsStringAsync("jwt");
             var client = HttpClientFactory.CreateClient("UniversityBack");
             client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);

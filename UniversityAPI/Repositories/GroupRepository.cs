@@ -38,6 +38,7 @@ namespace UniversityAPI.Repositories
                     .ThenInclude(s => s.User)
                 .Include(g => g.Faculty)
                 .Include(g => g.Major)
+                .Include(g => g.TeacherGroupSubjects)
                 .FirstOrDefaultAsync(d => d.Id == id);
         }
         public void Update(Group entity)
