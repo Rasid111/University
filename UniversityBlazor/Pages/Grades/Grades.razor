@@ -1,0 +1,82 @@
+@page "/grades"
+@attribute [Authorize]
+@inject ProfileService ProfileService
+@inject IHttpClientFactory HttpClientFactory
+@inject ILocalStorageService LocalStorage
+@using System.Net.Http.Headers
+@using UniversityBlazor.ViewModels
+@using System.Globalization
+@using UniversityBlazor.Services
+
+<h3>Your Grades</h3>
+
+@if (isLoading)
+{
+    <p><em>Loading grades...</em></p>
+}
+else if (!gradeBoxes.Any())
+{
+    <div class="alert alert-info">You have no grades yet.</div>
+}
+else
+{
+    <div class="d-flex flex-wrap gap-2">
+        @foreach (var grade in gradeBoxes.OrderByDescending(g => g.Date))
+        {
+            <div class="grade-box @GetGradeColorClass(grade.Value)"
+     title="@($"Subject: {grade.SubjectName}\nTeacher: {grade.TeacherName}\nGrade: {grade.Value}\nDate: {grade.Date:dd/MM/yyyy}\nMessage: {grade.Message}")">
+    @grade.Value
+</div>
+        }
+    </div>
+}
+
+@code {
+    private List<GradeBoxDto> gradeBoxes = new();
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var jwt = await LocalStorage.GetItemAsStringAsync("jwt");
+            var client = HttpClientFactory.CreateClient("UniversityBack");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+            var response = await client.GetAsync("api/Grade/GetGradeBoxes");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<List<GradeBoxDto>>();
+                if (result is not null)
+                    gradeBoxes = result;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Failed to load grades: " + ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetGradeColorClass(int value) => value switch
+    {
+        >= 90 => "grade-green",
+        >= 80 => "grade-light-green",
+        >= 70 => "grade-yellow",
+        >= 60 => "grade-orange",
+        _ => "grade-red"
+    };
+
+    public class GradeBoxDto
+    {
+        public int Value { get; set; }
+        public DateTime Date { get; set; }
+        public string TeacherName { get; set; } = "";
+        public string SubjectName { get; set; } = "";
+        public string Message { get; set; } = "";
+    }
+}

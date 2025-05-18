@@ -1,0 +1,54 @@
+.grade-box {
+    position: relative;
+    cursor: pointer;
+    padding: 10px 16px;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    min-width: 50px;
+    transition: background-color 0.3s ease;
+}
+
+/* Tooltip shown on hover */
+.grade-box:hover::after {
+    content: attr(title);
+    position: absolute;
+    white-space: pre-line;
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    top: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999;
+    min-width: 180px;
+    max-width: 250px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+}
+
+/* Grade color styles */
+.grade-green {
+    background-color: #28a745; /* Dark green */
+}
+
+.grade-light-green {
+    background-color: #76c893; /* Light green */
+}
+
+.grade-yellow {
+    background-color: #ffc107; /* Yellow */
+    color: #000;
+}
+
+.grade-orange {
+    background-color: #fd7e14; /* Orange */
+    color: #000;
+}
+
+.grade-red {
+    background-color: #dc3545; /* Red */
+}
