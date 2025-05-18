@@ -1,6 +1,11 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthProvider
+@using UniversityBlazor.Providers
+@using System.Security.Claims
 <div class="page">
-    <div class="sidebar">
+    <div class="sidebar @(!isStudent && !isTeacher ? "d-none" : "")">
         <NavMenu />
     </div>
 
@@ -21,3 +26,18 @@
         </article>
     </main>
 </div>
+@code {
+    bool isStudent = false;
+    bool isTeacher = false;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        isStudent = authState.User.IsInRole("Student");
+        isTeacher = authState.User.IsInRole("Teacher");
+    }
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+}

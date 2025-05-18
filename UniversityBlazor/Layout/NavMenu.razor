@@ -4,16 +4,16 @@
 @using UniversityBlazor.Providers
 @using System.Security.Claims
 
-<div class="top-row ps-3 navbar navbar-dark">
+<div class="top-row ps-3 navbar navbar-dark @(!isStudent && !isTeacher ? "d-none" : "")">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">Поставьте 12. Спасибо</a>
+        <a class="navbar-brand" href="">Поставьте 12</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
 </div>
 
-<div class="@NavMenuCssClass nav-scrollable d-flex flex-column justify-content-between">
+<div class="@NavMenuCssClass nav-scrollable d-flex @(!isStudent && !isTeacher ? "d-none" : "") flex-column justify-content-between">
     <nav class="flex-column">
         <AuthorizeView>
             <Authorized>
