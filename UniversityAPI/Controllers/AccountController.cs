@@ -24,50 +24,39 @@ namespace UniversityAPI.Controllers
         RoleManager<IdentityRole> roleManager,
         UniversityDbContext dbContext,
         UserRepository userRepository
-            ) : ControllerBase
+    ) : ControllerBase
     {
-        readonly JwtOptions _jwtOptions = jwtOptionsSnapshot.Value;
-        readonly UserManager<User> _userManager = userManager;
-        readonly SignInManager<User> _signInManager = signInManager;
-        readonly RoleManager<IdentityRole> _roleManager = roleManager;
-        readonly UniversityDbContext _dbContext = dbContext;
-        readonly UserRepository _userRepository = userRepository;
+        private readonly JwtOptions _jwtOptions = jwtOptionsSnapshot.Value;
+        private readonly UserManager<User> _userManager = userManager;
+        private readonly SignInManager<User> _signInManager = signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager = roleManager;
+        private readonly UniversityDbContext _dbContext = dbContext;
+        private readonly UserRepository _userRepository = userRepository;
 
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(string id)
         {
             var user = await _userRepository.Get(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-            return Ok(user);
+            return user == null ? NotFound() : Ok(user);
         }
 
         [HttpPost]
         public async Task<IActionResult> Login(LoginDto dto)
         {
             var foundUser = await _userManager.FindByEmailAsync(dto.Email);
-
             if (foundUser == null)
-            {
-                return base.BadRequest("Incorrect Email or Password");
-            }
+                return BadRequest("Incorrect Email or Password");
 
             var signInResult = await _signInManager.PasswordSignInAsync(foundUser, dto.Password, true, true);
 
             if (signInResult.IsLockedOut)
-            {
-                return base.BadRequest("User locked");
-            }
+                return BadRequest("User locked");
 
-            if (signInResult.Succeeded == false)
-            {
-                return base.BadRequest("Incorrect Login or Password");
-            }
+            if (!signInResult.Succeeded)
+                return BadRequest("Incorrect Login or Password");
 
-            var roles = await userManager.GetRolesAsync(foundUser);
-            
+            var roles = await _userManager.GetRolesAsync(foundUser);
+
             var claims = roles
                 .Select(roleStr => new Claim(ClaimTypes.Role, roleStr))
                 .Append(new Claim(ClaimTypes.NameIdentifier, foundUser.Id))
@@ -94,8 +83,8 @@ namespace UniversityAPI.Controllers
                 Token = Guid.NewGuid(),
             };
 
-            await dbContext.RefreshTokens.AddAsync(refreshToken);
-            await dbContext.SaveChangesAsync();
+            await _dbContext.RefreshTokens.AddAsync(refreshToken);
+            await _dbContext.SaveChangesAsync();
 
             return Ok(new
             {
@@ -115,14 +104,11 @@ namespace UniversityAPI.Controllers
                 Surname = dto.Surname,
             };
 
-            var result = await userManager.CreateAsync(newUser, dto.Password);
+            var result = await _userManager.CreateAsync(newUser, dto.Password);
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
 
-            if (result.Succeeded == false)
-            {
-                return base.BadRequest(result.Errors);
-            }
-
-            await userManager.AddToRoleAsync(newUser, UserRoleDefaults.User);
+            await _userManager.AddToRoleAsync(newUser, UserRoleDefaults.User);
 
             return Ok();
         }
@@ -131,18 +117,12 @@ namespace UniversityAPI.Controllers
         [ActionName("Token")]
         public async Task<IActionResult> UpdateToken([Required] Guid refresh)
         {
-            var tokenStr = base.HttpContext.Request.Headers.Authorization.FirstOrDefault();
-
+            var tokenStr = HttpContext.Request.Headers.Authorization.FirstOrDefault();
             if (tokenStr is null)
-            {
-                return base.StatusCode(401);
-            }
+                return StatusCode(401);
 
             if (tokenStr.StartsWith("Bearer "))
-            {
                 tokenStr = tokenStr["Bearer ".Length..];
-                System.Console.WriteLine(tokenStr);
-            }
 
             var handler = new JwtSecurityTokenHandler();
             var tokenValidationResult = await handler.ValidateTokenAsync(
@@ -150,53 +130,39 @@ namespace UniversityAPI.Controllers
                 new TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidIssuer = "University",
-
+                    ValidIssuer = _jwtOptions.Issuer,
                     ValidateAudience = true,
-                    ValidAudience = "User",
-
+                    ValidAudience = _jwtOptions.Audience,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(_jwtOptions.KeyInBytes)
                 }
             );
 
-            if (tokenValidationResult.IsValid == false)
-            {
+            if (!tokenValidationResult.IsValid)
                 return BadRequest(tokenValidationResult.Exception);
-            }
 
             var token = handler.ReadJwtToken(tokenStr);
-
-            Claim? idClaim = token.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier);
-
+            var idClaim = token.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             if (idClaim is null)
-            {
                 return BadRequest($"Token has no claim with type '{ClaimTypes.NameIdentifier}'");
-            }
 
             var userId = idClaim.Value;
-
-            User? foundUser = await _userManager.FindByIdAsync(userId);
-
+            var foundUser = await _userManager.FindByIdAsync(userId);
             if (foundUser is null)
-            {
                 return BadRequest($"User not found by id: '{userId}'");
-            }
 
-            var oldRefreshToken = await _dbContext.RefreshTokens.FirstOrDefaultAsync(rt => (rt.Token == refresh) && (rt.UserId == foundUser.Id));
-
+            var oldRefreshToken = await _dbContext.RefreshTokens
+                .FirstOrDefaultAsync(rt => rt.Token == refresh && rt.UserId == foundUser.Id);
 
             if (oldRefreshToken is null)
             {
-                var allUserRefreshTokens = _dbContext.RefreshTokens.Where(rt => rt.UserId == foundUser.Id);
-
-                dbContext.RefreshTokens.RemoveRange(allUserRefreshTokens);
+                var allTokens = _dbContext.RefreshTokens.Where(rt => rt.UserId == foundUser.Id);
+                _dbContext.RefreshTokens.RemoveRange(allTokens);
                 await _dbContext.SaveChangesAsync();
-
                 return BadRequest("Refresh token not found!");
             }
 
-            dbContext.RefreshTokens.Remove(oldRefreshToken);
+            _dbContext.RefreshTokens.Remove(oldRefreshToken);
             var newRefreshToken = new RefreshToken
             {
                 UserId = foundUser.Id,
@@ -205,7 +171,7 @@ namespace UniversityAPI.Controllers
             await _dbContext.RefreshTokens.AddAsync(newRefreshToken);
             await _dbContext.SaveChangesAsync();
 
-            var roles = await userManager.GetRolesAsync(foundUser);
+            var roles = await _userManager.GetRolesAsync(foundUser);
 
             var claims = roles
                 .Select(roleStr => new Claim(ClaimTypes.Role, roleStr))
@@ -221,7 +187,7 @@ namespace UniversityAPI.Controllers
                 issuer: _jwtOptions.Issuer,
                 audience: _jwtOptions.Audience,
                 claims: claims,
-                expires: DateTime.Now.AddSeconds(10),
+                expires: DateTime.Now.AddMinutes(_jwtOptions.LifeTimeInMinutes),
                 signingCredentials: signingCredentials
             );
 
@@ -232,6 +198,28 @@ namespace UniversityAPI.Controllers
                 refresh = newRefreshToken.Token,
                 access = newTokenStr,
             });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword([FromBody] PasswordChangeDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+                return Unauthorized();
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+                return NotFound("User not found");
+
+            var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
+
+            if (!result.Succeeded)
+                return BadRequest(result.Errors);
+
+            return Ok("Password changed successfully.");
         }
     }
 }
