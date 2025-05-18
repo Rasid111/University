@@ -31,7 +31,19 @@ namespace UniversityAPI.Repositories
         {
             return await _context.Subjects.FirstOrDefaultAsync(d => d.Id == id);
         }
-
+        public async Task<List<Subject>> GetByUserId(int id)
+        {
+            return await _context.Subjects
+                .Include(s => s.Tests)
+                .ThenInclude(t => t.Questions)
+                .Include(s => s.TeacherGroupSubjects)
+                .ThenInclude(tgs => tgs.Group)
+                .ThenInclude(g => g.Students)
+                .Where(s => s.TeacherGroupSubjects
+                    .Any(tgs => tgs.Group.Students
+                        .Any(s => s.Id == id)))
+                .ToListAsync();
+        }
         public void Update(Subject entity)
         {
             _context.Subjects.Update(entity);
