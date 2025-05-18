@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using UniversityAPI.EntityFramework;
 using UniversityAPI.Models;
 using UniversityAPI.Repositories;
 using UniversityApplication.Dtos;
+using System.Security.Claims;
+
 
 namespace UniversityAPI.Controllers
 {
@@ -11,9 +15,10 @@ namespace UniversityAPI.Controllers
     [ApiController]
     [ProducesResponseType(401)]
     [ProducesResponseType(500)]
-    public class GradeController(GradeRepository repository) : ControllerBase
+    public class GradeController(GradeRepository repository, UniversityDbContext context) : ControllerBase
     {
-        readonly GradeRepository _repository = repository;
+        private readonly GradeRepository _repository = repository;
+        private readonly UniversityDbContext _context = context;
 
         [HttpGet]
         [ProducesResponseType(200)]
@@ -44,7 +49,7 @@ namespace UniversityAPI.Controllers
                 "Student" => grade.StudentProfileId == userId,
                 "Teacher" => grade.TeacherProfileId == userId,
                 "Admin" => true,
-             _ => false
+                _ => false
             };
 
             if (!isAuthorized)
@@ -52,7 +57,6 @@ namespace UniversityAPI.Controllers
 
             return Ok(grade);
         }
-
 
         [HttpPost]
         [ProducesResponseType(203)]
@@ -91,5 +95,83 @@ namespace UniversityAPI.Controllers
             await _repository.Delete(id);
             return NoContent();
         }
+
+        [HttpGet("{studentId}")]
+        public async Task<IActionResult> GetGradesForStudent(int studentId)
+        {
+            var student = await _context.StudentProfiles
+                .Include(s => s.Grades)
+                .FirstOrDefaultAsync(s => s.Id == studentId);
+
+            if (student == null)
+                return NotFound();
+
+            var teacherIds = student.Grades.Select(g => g.TeacherProfileId).Distinct().ToList();
+            var teachers = await _context.TeachersProfiles
+                .Include(tp => tp.User)
+                .Where(tp => teacherIds.Contains(tp.Id))
+                .ToListAsync();
+
+            var subjectIds = student.Grades.Select(g => g.SubjectId).Distinct().ToList();
+            var subjects = await _context.Subjects
+                .Where(s => subjectIds.Contains(s.Id))
+                .ToListAsync();
+
+            var dtoList = student.Grades
+                .OrderByDescending(g => g.Date)
+                .Select(g => new GradeBoxDto
+                {
+                    Value = g.Value,
+                    Message = g.Message ?? "",
+                    Date = g.Date,
+                    TeacherName = teachers.FirstOrDefault(t => t.Id == g.TeacherProfileId)?.User?.Name + " " +
+                                  teachers.FirstOrDefault(t => t.Id == g.TeacherProfileId)?.User?.Surname,
+                    SubjectName = subjects.FirstOrDefault(s => s.Id == g.SubjectId)?.Name ?? "Unknown"
+                })
+                .ToList();
+
+            return Ok(dtoList);
+        }
+
+        [HttpGet]
+public async Task<IActionResult> GetGradeBoxes()
+{
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (userId == null) return Unauthorized();
+
+    var student = await _context.StudentProfiles
+        .Include(s => s.Grades)
+        .FirstOrDefaultAsync(s => s.UserId == userId);
+
+    if (student == null)
+        return NotFound("Student profile not found.");
+
+    var teacherIds = student.Grades.Select(g => g.TeacherProfileId).Distinct().ToList();
+    var teachers = await _context.TeachersProfiles
+        .Include(tp => tp.User)
+        .Where(tp => teacherIds.Contains(tp.Id))
+        .ToListAsync();
+
+    var subjectIds = student.Grades.Select(g => g.SubjectId).Distinct().ToList();
+    var subjects = await _context.Subjects
+        .Where(s => subjectIds.Contains(s.Id))
+        .ToListAsync();
+
+    var dtoList = student.Grades
+        .OrderByDescending(g => g.Date)
+        .Select(g => new GradeBoxDto
+        {
+            Value = g.Value,
+            Message = g.Message ?? "",
+            Date = g.Date,
+            TeacherName = teachers.FirstOrDefault(t => t.Id == g.TeacherProfileId)?.User?.Name + " " +
+                          teachers.FirstOrDefault(t => t.Id == g.TeacherProfileId)?.User?.Surname,
+            SubjectName = subjects.FirstOrDefault(s => s.Id == g.SubjectId)?.Name ?? "Unknown"
+        })
+        .ToList();
+
+    return Ok(dtoList);
+}
+
     }
 }
