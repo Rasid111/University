@@ -24,7 +24,7 @@ namespace UniversityBlazor
 
             builder.Services.AddHttpClient("UniversityBack", httpClient =>
             {
-                httpClient.BaseAddress = new Uri("http://127.0.0.1:5263/");
+                httpClient.BaseAddress = new Uri("http://localhost:5263/");
             });
             builder.Services.AddBlazoredLocalStorageAsSingleton();
 
