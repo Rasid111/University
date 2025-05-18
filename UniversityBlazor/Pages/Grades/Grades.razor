@@ -24,7 +24,7 @@ else
         @foreach (var grade in gradeBoxes.OrderByDescending(g => g.Date))
         {
             <div class="grade-box @GetGradeColorClass(grade.Value)"
-     title="@($"Subject: {grade.SubjectName}\nTeacher: {grade.TeacherName}\nGrade: {grade.Value}\nDate: {grade.Date:dd/MM/yyyy}\nMessage: {grade.Message}")">
+     title="@($"Subject: {grade.SubjectName}\nTeacher: {grade.TeacherName}\nDate: {grade.Date:dd/MM/yyyy}\nMessage: {grade.Message}")">
     @grade.Value
 </div>
         }

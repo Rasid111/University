@@ -56,6 +56,7 @@ namespace UniversityAPI.Controllers
             var id = await _teacherProfileRepository.Create(tp);
             user.TeacherProfile = tp;
             user.TeacherProfileId = id;
+            await _userManager.AddToRoleAsync(user, "Teacher");
             await _userManager.UpdateAsync(user);
             return NoContent();
         }

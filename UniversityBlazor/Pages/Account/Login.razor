@@ -16,7 +16,7 @@
     <div class="@AlertVisibleClass alert alert-danger" role="alert">
         @httpResponseErrorMessage
     </div>
-    
+
     <div class="mb-3">
         <label for="email" class="form-label">Login</label>
         <input type="email" class="form-control" id="email" @bind-value=loginDto.Email>
@@ -31,6 +31,15 @@
 </EditForm>
 
 @code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState.User is not null && authState.User.Identity is not null)
+        {
+            navigationManager.NavigateTo("/profile");
+        }
+    }
+
     private string? httpResponseErrorMessage;
     public string? AlertVisibleClass => string.IsNullOrEmpty(httpResponseErrorMessage) ? "invisible" : "visible";
 

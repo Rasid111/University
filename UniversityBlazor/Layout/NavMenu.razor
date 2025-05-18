@@ -2,10 +2,11 @@
 @inject ILocalStorageService LocalStorage
 @inject AuthenticationStateProvider AuthProvider
 @using UniversityBlazor.Providers
+@using System.Security.Claims
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">UniversityBlazor</a>
+        <a class="navbar-brand" href="">Поставьте 12. Спасибо</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -26,11 +27,14 @@
                         <span class="bi bi-person-circle" aria-hidden="true"></span> Schedule
                     </NavLink>
                 </div>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Subjects">
-                        <span class="bi bi-people-fill" aria-hidden="true"></span> Subjects
-                    </NavLink>
-                </div>
+                @if (isStudent)
+                {
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="Subjects">
+                            <span class="bi bi-people-fill" aria-hidden="true"></span> Subjects
+                        </NavLink>
+                    </div>
+                }
             </Authorized>
             <NotAuthorized>
                 <div class="nav-item px-3">
@@ -40,43 +44,33 @@
                 </div>
             </NotAuthorized>
         </AuthorizeView>
+        @if (isTeacher)
+        {
+            <AuthorizeView>
+                <Authorized>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="Groups">
+                            <i class="bi bi-people-fill"></i> Groups
+                        </NavLink>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        }
 
         <AuthorizeView>
             <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="Groups">
-                        <i class="bi bi-people-fill"></i> Groups
-                    </NavLink>
-                </div>
+                @if (isStudent)
+                {
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="Grades">
+                            <span class="bi bi-bar-chart-line" aria-hidden="true"></span> Grades
+                        </NavLink>
+                    </div>
+                }
             </Authorized>
         </AuthorizeView>
 
-        <AuthorizeView>
-        <Authorized>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="Grades">
-                <span class="bi bi-bar-chart-line" aria-hidden="true"></span> Grades
-            </NavLink>
-        </div>
-    </Authorized>
-</AuthorizeView>
 
-
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <i class="bi bi-house-door-fill"></i> Home
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <i class="bi bi-plus-square-fill"></i> Counter
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <i class="bi bi-list-nested"></i> Weather
-            </NavLink>
-        </div>
     </nav>
 
     <AuthorizeView>
@@ -91,6 +85,15 @@
 </div>
 
 @code {
+    bool isStudent = false;
+    bool isTeacher = false;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        isStudent = authState.User.IsInRole("Student");
+        isTeacher = authState.User.IsInRole("Teacher");
+    }
     private bool collapseNavMenu = true;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;

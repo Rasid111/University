@@ -51,6 +51,8 @@ namespace UniversityAPI
                 var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
                 await roleManager.CreateAsync(new IdentityRole(UserRoleDefaults.User));
                 await roleManager.CreateAsync(new IdentityRole(UserRoleDefaults.Admin));
+                await roleManager.CreateAsync(new IdentityRole("Student"));
+                await roleManager.CreateAsync(new IdentityRole("Teacher"));
             }
 
             // Middleware pipeline
